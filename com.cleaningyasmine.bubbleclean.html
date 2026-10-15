@@ -4,952 +4,441 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <title>Snefin</title>
+  <!-- 全局构建 CDN（禁止 ESM） -->
   <script src="https://cdn.jsdelivr.net/npm/vue@3/dist/vue.global.prod.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/vue-router@4/dist/vue-router.global.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/js-md5@0.9.2"></script>
   <style>
-    /* ============================================================
-       THEME: Flat Design (style #1)
-       Pure colors, no shadows/textures, clean geometry.
-       ============================================================ */
+    /* ========== 风格: 扁平化设计 (Flat) ========== */
     :root {
-      --color-primary: #2563eb;
-      --color-primary-dark: #1d4ed8;
-      --color-primary-light: #dbeafe;
-      --color-bg: #f8fafc;
-      --color-surface: #ffffff;
-      --color-text: #0f172a;
-      --color-text-secondary: #64748b;
-      --color-text-muted: #94a3b8;
-      --color-border: #e2e8f0;
-      --color-up: #ef4444;
-      --color-down: #3b82f6;
-      --color-success: #22c55e;
-      --color-warning: #f59e0b;
-      --color-danger: #ef4444;
-      --space-xs: 4px;
-      --space-sm: 8px;
-      --space-md: 16px;
-      --space-lg: 24px;
-      --space-xl: 32px;
-      --radius-sm: 6px;
-      --radius-md: 10px;
-      --radius-lg: 16px;
-      --radius-full: 9999px;
-      --shadow-sm: none;
-      --shadow-md: none;
-      --font: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-      --tab-height: 56px;
-      --header-height: 52px;
+      --bg: #f5f7fa;
+      --surface: #ffffff;
+      --text-primary: #1e293b;
+      --text-secondary: #64748b;
+      --text-muted: #94a3b8;
+      --border: #e2e8f0;
+      --primary: #2563eb;
+      --primary-light: #dbeafe;
+      --up: #dc2626;        /* 暖色涨 */
+      --down: #2563eb;      /* 冷色跌 */
+      --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+      --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+      --radius: 12px;
+      --radius-sm: 8px;
+      --spacing: 16px;
+      --tabbar-height: 60px;
+      --safe-top: env(safe-area-inset-top, 0px);
+      --safe-bottom: env(safe-area-inset-bottom, 0px);
+      --font: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
     }
-
-    * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
-      -webkit-tap-highlight-color: transparent;
-    }
-
-    html, body {
-      height: 100%;
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    html, body { height: 100%; }
+    body {
       font-family: var(--font);
-      background: var(--color-bg);
-      color: var(--color-text);
-      font-size: 15px;
-      line-height: 1.5;
+      background: var(--bg);
+      color: var(--text-primary);
       -webkit-font-smoothing: antialiased;
-      overscroll-behavior: none;
+      overflow: hidden;
     }
-
     #app {
-      min-height: 100%;
+      height: 100%;
       display: flex;
       flex-direction: column;
     }
-
-    /* ---------- Safe area helpers ---------- */
-    .safe-top { padding-top: env(safe-area-inset-top, 0px); }
-    .safe-bottom { padding-bottom: env(safe-area-inset-bottom, 0px); }
-
-    /* ---------- Layout ---------- */
-    .page {
-      flex: 1;
-      display: flex;
-      flex-direction: column;
-      min-height: 0;
-    }
-
-    .page-scroll {
+    /* 路由视图容器 */
+    .app-view {
       flex: 1;
       overflow-y: auto;
+      overflow-x: hidden;
       -webkit-overflow-scrolling: touch;
-      padding-bottom: calc(var(--tab-height) + env(safe-area-inset-bottom, 0px) + var(--space-md));
-    }
-
-    .page-scroll.no-tab {
-      padding-bottom: var(--space-md);
-    }
-
-    .container {
-      width: 100%;
-      max-width: 640px;
-      margin: 0 auto;
-      padding: 0 var(--space-md);
-    }
-
-    /* ---------- Header ---------- */
-    .app-header {
-      height: var(--header-height);
-      display: flex;
-      align-items: center;
-      padding: 0 var(--space-md);
-      background: var(--color-surface);
-      border-bottom: 1px solid var(--color-border);
-      position: sticky;
-      top: 0;
-      z-index: 20;
-      flex-shrink: 0;
-    }
-
-    .app-header .back-btn {
-      width: 44px;
-      height: 44px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      margin-left: -12px;
-      cursor: pointer;
-      background: none;
-      border: none;
-      color: var(--color-text);
-      border-radius: var(--radius-full);
-    }
-
-    .app-header .back-btn:active {
-      background: var(--color-border);
-    }
-
-    .app-header .header-title {
-      font-size: 17px;
-      font-weight: 600;
-      flex: 1;
-      text-align: center;
-      margin-right: 32px;
-    }
-
-    .app-header .header-actions {
-      display: flex;
-      gap: var(--space-sm);
-    }
-
-    /* ---------- Bottom Tab Bar ---------- */
-    .tab-bar {
-      height: var(--tab-height);
-      display: flex;
-      align-items: stretch;
-      background: var(--color-surface);
-      border-top: 1px solid var(--color-border);
-      padding-bottom: env(safe-area-inset-bottom, 0px);
-      flex-shrink: 0;
       position: relative;
-      z-index: 30;
+      padding-bottom: 0;
     }
+    /* 当有 tab 时留出底部空间 */
+    .has-tabbar .app-view {
+      padding-bottom: calc(var(--tabbar-height) + var(--safe-bottom));
+    }
+    /* 页面过渡 */
+    .fade-enter-active, .fade-leave-active { transition: opacity 0.2s ease; }
+    .fade-enter-from, .fade-leave-to { opacity: 0; }
 
+    /* ========== 底部标签栏 ========== */
+    .tab-bar {
+      position: fixed;
+      left: 0; right: 0; bottom: 0;
+      height: var(--tabbar-height);
+      padding-bottom: var(--safe-bottom);
+      background: var(--surface);
+      border-top: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-around;
+      z-index: 100;
+      box-shadow: 0 -1px 3px rgb(0 0 0 / 0.03);
+    }
     .tab-item {
       flex: 1;
       display: flex;
       flex-direction: column;
       align-items: center;
       justify-content: center;
-      gap: 2px;
+      gap: 4px;
+      height: 44px;
       text-decoration: none;
-      color: var(--color-text-muted);
+      color: var(--text-muted);
       font-size: 11px;
       font-weight: 500;
       transition: color 0.15s;
-      min-height: 44px;
-      position: relative;
+      -webkit-tap-highlight-color: transparent;
+      user-select: none;
     }
-
+    .tab-item svg { width: 22px; height: 22px; }
     .tab-item.router-link-active {
-      color: var(--color-primary);
+      color: var(--primary);
     }
+    .tab-item.router-link-active svg { stroke: var(--primary); }
 
-    .tab-item svg {
-      width: 22px;
-      height: 22px;
+    /* ========== 通用组件样式 ========== */
+    .page-pad { padding: var(--spacing); }
+    .card {
+      background: var(--surface);
+      border-radius: var(--radius);
+      padding: var(--spacing);
+      box-shadow: var(--shadow-sm);
+      border: 1px solid var(--border);
     }
-
-    /* ---------- Buttons ---------- */
     .btn {
       display: inline-flex;
       align-items: center;
       justify-content: center;
       min-height: 44px;
-      padding: 0 var(--space-lg);
+      padding: 0 20px;
       border: none;
-      border-radius: var(--radius-md);
+      border-radius: var(--radius-sm);
+      background: var(--primary);
+      color: #fff;
       font-size: 15px;
       font-weight: 600;
-      font-family: var(--font);
       cursor: pointer;
-      transition: opacity 0.15s;
-      text-decoration: none;
-      line-height: 1;
+      transition: background 0.15s;
+      -webkit-tap-highlight-color: transparent;
+      user-select: none;
     }
-
-    .btn:active {
-      opacity: 0.75;
-    }
-
-    .btn-primary {
-      background: var(--color-primary);
-      color: #fff;
-    }
-
+    .btn:active { background: #1d4ed8; }
+    .btn:disabled { background: #cbd5e1; cursor: not-allowed; }
     .btn-outline {
       background: transparent;
-      color: var(--color-primary);
-      border: 1.5px solid var(--color-primary);
+      color: var(--primary);
+      border: 1.5px solid var(--primary);
     }
-
-    .btn-block {
-      width: 100%;
-    }
-
-    .btn:disabled {
-      background: var(--color-border);
-      color: var(--color-text-muted);
-      cursor: not-allowed;
-      opacity: 1;
-    }
-
-    /* ---------- Cards ---------- */
-    .card {
-      background: var(--color-surface);
-      border: 1px solid var(--color-border);
-      border-radius: var(--radius-md);
-      padding: var(--space-md);
-      margin-bottom: var(--space-md);
-    }
-
-    .card-title {
-      font-size: 15px;
-      font-weight: 600;
-      margin-bottom: var(--space-sm);
-    }
-
-    /* ---------- Form ---------- */
-    .form-group {
-      margin-bottom: var(--space-md);
-    }
-
-    .form-label {
-      display: block;
-      font-size: 13px;
-      font-weight: 600;
-      color: var(--color-text-secondary);
-      margin-bottom: var(--space-xs);
-    }
-
-    .form-input,
-    .form-textarea,
-    .form-select {
+    .btn-outline:active { background: var(--primary-light); }
+    .input {
       width: 100%;
       min-height: 44px;
       padding: 10px 12px;
-      border: 1.5px solid var(--color-border);
+      border: 1px solid var(--border);
       border-radius: var(--radius-sm);
       font-size: 15px;
-      font-family: var(--font);
-      background: var(--color-surface);
-      color: var(--color-text);
+      background: var(--surface);
+      color: var(--text-primary);
       outline: none;
       transition: border-color 0.15s;
-      -webkit-appearance: none;
-      appearance: none;
     }
-
-    .form-input:focus,
-    .form-textarea:focus,
-    .form-select:focus {
-      border-color: var(--color-primary);
-    }
-
-    .form-textarea {
-      min-height: 100px;
-      resize: vertical;
-    }
-
-    .form-row {
-      display: flex;
-      gap: var(--space-sm);
-    }
-
-    .form-row > * {
-      flex: 1;
-    }
-
-    /* ---------- Stock List ---------- */
-    .stock-list {
-      display: flex;
-      flex-direction: column;
-    }
-
-    .stock-item {
-      display: flex;
-      align-items: center;
-      gap: var(--space-md);
-      padding: 14px var(--space-md);
-      background: var(--color-surface);
-      border-bottom: 1px solid var(--color-border);
-      cursor: pointer;
-      transition: background 0.1s;
-      min-height: 64px;
-      text-decoration: none;
-      color: inherit;
-    }
-
-    .stock-item:active {
-      background: var(--color-bg);
-    }
-
-    .stock-item:first-child {
-      border-top: 1px solid var(--color-border);
-    }
-
-    .stock-avatar {
-      width: 40px;
-      height: 40px;
-      border-radius: var(--radius-sm);
-      background: var(--color-primary-light);
-      color: var(--color-primary);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 12px;
-      font-weight: 700;
-      flex-shrink: 0;
-    }
-
-    .stock-info {
-      flex: 1;
-      min-width: 0;
-    }
-
-    .stock-symbol {
-      font-size: 15px;
-      font-weight: 600;
-      line-height: 1.2;
-    }
-
-    .stock-name {
-      font-size: 12px;
-      color: var(--color-text-secondary);
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      margin-top: 2px;
-    }
-
-    .stock-price-col {
-      text-align: right;
-      flex-shrink: 0;
-    }
-
-    .stock-price {
-      font-size: 15px;
-      font-weight: 600;
-      font-variant-numeric: tabular-nums;
-    }
-
-    .stock-change {
+    .input:focus { border-color: var(--primary); }
+    .label {
+      display: block;
       font-size: 13px;
       font-weight: 600;
-      font-variant-numeric: tabular-nums;
-      margin-top: 2px;
+      color: var(--text-secondary);
+      margin-bottom: 6px;
     }
+    .section-title {
+      font-size: 18px;
+      font-weight: 700;
+      margin-bottom: 12px;
+      color: var(--text-primary);
+    }
+    .text-muted { color: var(--text-muted); font-size: 13px; }
+    .text-up { color: var(--up); font-weight: 600; }
+    .text-down { color: var(--down); font-weight: 600; }
+    .row { display: flex; align-items: center; }
+    .gap-8 { gap: 8px; }
+    .gap-12 { gap: 12px; }
+    .gap-16 { gap: 16px; }
+    .mt-8 { margin-top: 8px; }
+    .mt-12 { margin-top: 12px; }
+    .mt-16 { margin-top: 16px; }
+    .mb-8 { margin-bottom: 8px; }
+    .mb-12 { margin-bottom: 12px; }
+    .mb-16 { margin-bottom: 16px; }
+    .flex-1 { flex: 1; }
+    .flex-col { display: flex; flex-direction: column; }
+    .items-center { align-items: center; }
+    .justify-between { justify-content: space-between; }
 
-    .stock-change.up { color: var(--color-up); }
-    .stock-change.down { color: var(--color-down); }
+    /* 头部品牌区 */
+    .brand-header {
+      padding: 20px 16px 16px;
+      background: linear-gradient(135deg, #2563eb 0%, #1e40af 100%);
+      color: #fff;
+      border-radius: 0 0 20px 20px;
+      margin-bottom: 16px;
+    }
+    .brand-header h1 { font-size: 26px; font-weight: 800; letter-spacing: -0.5px; }
+    .brand-header p { font-size: 14px; opacity: 0.85; margin-top: 4px; }
 
-    /* ---------- Feature Grid ---------- */
-    .feature-grid {
+    /* 功能图标网格 */
+    .quick-grid {
       display: grid;
       grid-template-columns: repeat(4, 1fr);
-      gap: var(--space-sm);
-      padding: var(--space-md);
+      gap: 8px;
+      padding: 0 16px;
+      margin-bottom: 16px;
     }
-
-    .feature-item {
+    .quick-item {
       display: flex;
       flex-direction: column;
       align-items: center;
       gap: 6px;
-      padding: var(--space-sm) 2px;
-      background: var(--color-surface);
-      border: 1px solid var(--color-border);
-      border-radius: var(--radius-md);
+      padding: 10px 4px;
+      background: var(--surface);
+      border-radius: var(--radius-sm);
+      box-shadow: var(--shadow-sm);
       text-decoration: none;
-      color: var(--color-text);
-      cursor: pointer;
-      transition: background 0.1s;
-      min-height: 44px;
+      color: var(--text-primary);
+      font-size: 11px;
+      font-weight: 600;
+      text-align: center;
+      border: 1px solid var(--border);
+      -webkit-tap-highlight-color: transparent;
+      transition: background 0.15s;
     }
+    .quick-item:active { background: var(--primary-light); }
+    .quick-item svg { width: 28px; height: 28px; color: var(--primary); }
 
-    .feature-item:active {
-      background: var(--color-bg);
-    }
-
-    .feature-icon {
-      width: 36px;
-      height: 36px;
+    /* 股票列表 */
+    .stock-list { padding: 0 16px; }
+    .stock-item {
       display: flex;
       align-items: center;
-      justify-content: center;
-      color: var(--color-primary);
+      justify-content: space-between;
+      padding: 12px 14px;
+      background: var(--surface);
+      border-radius: var(--radius-sm);
+      margin-bottom: 8px;
+      border: 1px solid var(--border);
+      text-decoration: none;
+      color: inherit;
+      -webkit-tap-highlight-color: transparent;
+      transition: background 0.15s;
     }
+    .stock-item:active { background: #f8fafc; }
+    .stock-symbol { font-weight: 700; font-size: 15px; }
+    .stock-name { font-size: 12px; color: var(--text-secondary); margin-top: 2px; }
+    .stock-price { font-weight: 600; font-size: 15px; text-align: right; }
+    .stock-change { font-size: 13px; font-weight: 600; text-align: right; margin-top: 2px; }
 
-    .feature-icon svg {
-      width: 26px;
-      height: 26px;
+    /* 详情页 */
+    .detail-header {
+      padding: 16px;
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
     }
+    .detail-price { font-size: 28px; font-weight: 800; }
+    .chart-wrap {
+      background: var(--surface);
+      border-radius: var(--radius);
+      margin: 16px;
+      padding: 12px;
+      border: 1px solid var(--border);
+      box-shadow: var(--shadow-sm);
+    }
+    .chart-wrap svg { width: 100%; height: auto; display: block; }
 
-    .feature-label {
-      font-size: 11px;
-      font-weight: 500;
+    /* 工具卡片 */
+    .tool-card {
+      background: var(--surface);
+      border-radius: var(--radius);
+      padding: 16px;
+      margin-bottom: 12px;
+      border: 1px solid var(--border);
+      box-shadow: var(--shadow-sm);
+    }
+    .tool-card h3 { font-size: 16px; font-weight: 700; margin-bottom: 12px; }
+
+    /* 日历 */
+    .calendar-grid {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 4px;
       text-align: center;
-      color: var(--color-text-secondary);
-      line-height: 1.2;
     }
-
-    /* ---------- Brand Header ---------- */
-    .brand-header {
-      padding: var(--space-xl) var(--space-md) var(--space-lg);
-      background: var(--color-primary);
-      color: #fff;
-      text-align: center;
-    }
-
-    .brand-name {
-      font-size: 28px;
-      font-weight: 700;
-      letter-spacing: -0.5px;
-    }
-
-    .brand-tagline {
-      font-size: 14px;
-      opacity: 0.85;
-      margin-top: var(--space-xs);
-    }
-
-    /* ---------- Section Title ---------- */
-    .section-title {
-      font-size: 13px;
-      font-weight: 700;
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
-      color: var(--color-text-muted);
-      padding: var(--space-md) var(--space-md) var(--space-sm);
-    }
-
-    /* ---------- Loading ---------- */
-    .loading-screen {
-      flex: 1;
+    .calendar-cell {
+      min-height: 40px;
       display: flex;
       flex-direction: column;
       align-items: center;
       justify-content: center;
-      background: var(--color-primary);
-      color: #fff;
-      gap: var(--space-lg);
+      border-radius: 6px;
+      font-size: 13px;
+      position: relative;
     }
+    .calendar-cell.today { background: var(--primary-light); font-weight: 700; }
+    .calendar-cell.checked { background: #dcfce7; color: #16a34a; font-weight: 700; }
+    .calendar-dot { width: 5px; height: 5px; border-radius: 50%; background: var(--primary); margin-top: 2px; }
 
-    .loading-logo {
-      width: 72px;
-      height: 72px;
-      border-radius: var(--radius-lg);
-      background: #fff;
+    /* 列表项通用 */
+    .list-item {
       display: flex;
       align-items: center;
-      justify-content: center;
-      font-size: 32px;
-      font-weight: 700;
-      color: var(--color-primary);
+      justify-content: space-between;
+      padding: 14px 16px;
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      text-decoration: none;
+      color: inherit;
+      -webkit-tap-highlight-color: transparent;
+      cursor: pointer;
+    }
+    .list-item:active { background: #f8fafc; }
+    .list-item .chevron { color: var(--text-muted); }
+
+    /* Toast */
+    .toast {
+      position: fixed;
+      bottom: calc(80px + var(--safe-bottom));
+      left: 50%;
+      transform: translateX(-50%);
+      background: #1e293b;
+      color: #fff;
+      padding: 10px 20px;
+      border-radius: 20px;
+      font-size: 14px;
+      z-index: 999;
+      white-space: nowrap;
+      box-shadow: var(--shadow-md);
     }
 
-    .loading-spinner {
-      width: 28px;
-      height: 28px;
-      border: 3px solid rgba(255,255,255,0.3);
-      border-top-color: #fff;
+    /* Loading 页 */
+    .loading-screen {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100%;
+      background: var(--bg);
+      gap: 20px;
+    }
+    .spinner {
+      width: 40px; height: 40px;
+      border: 4px solid var(--border);
+      border-top-color: var(--primary);
       border-radius: 50%;
       animation: spin 0.8s linear infinite;
     }
+    @keyframes spin { to { transform: rotate(360deg); } }
 
-    @keyframes spin {
-      to { transform: rotate(360deg); }
-    }
-
-    /* ---------- Settings List ---------- */
-    .settings-list {
-      background: var(--color-surface);
-      border-top: 1px solid var(--color-border);
-      border-bottom: 1px solid var(--color-border);
-    }
-
-    .settings-item {
-      display: flex;
-      align-items: center;
-      gap: var(--space-md);
-      padding: var(--space-md);
-      border-bottom: 1px solid var(--color-border);
-      cursor: pointer;
-      min-height: 52px;
-      text-decoration: none;
-      color: var(--color-text);
-      background: var(--color-surface);
-      transition: background 0.1s;
-    }
-
-    .settings-item:last-child {
-      border-bottom: none;
-    }
-
-    .settings-item:active {
-      background: var(--color-bg);
-    }
-
-    .settings-item-icon {
-      width: 32px;
-      height: 32px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      color: var(--color-primary);
-      flex-shrink: 0;
-    }
-
-    .settings-item-icon svg {
-      width: 22px;
-      height: 22px;
-    }
-
-    .settings-item-text {
-      flex: 1;
-      font-size: 15px;
-      font-weight: 500;
-    }
-
-    .settings-item-value {
-      font-size: 13px;
-      color: var(--color-text-muted);
-    }
-
-    .settings-item-arrow {
-      color: var(--color-text-muted);
-      flex-shrink: 0;
-    }
-
-    /* ---------- Chart ---------- */
-    .chart-container {
-      width: 100%;
-      background: var(--color-surface);
-      border: 1px solid var(--color-border);
-      border-radius: var(--radius-md);
-      padding: var(--space-sm);
-      margin-bottom: var(--space-md);
-    }
-
-    .chart-container svg {
-      display: block;
-      width: 100%;
-      height: auto;
-    }
-
-    /* ---------- Toast ---------- */
-    .toast {
-      position: fixed;
-      bottom: calc(var(--tab-height) + env(safe-area-inset-bottom, 0px) + 20px);
-      left: 50%;
-      transform: translateX(-50%);
-      background: var(--color-text);
-      color: #fff;
-      padding: 10px 20px;
-      border-radius: var(--radius-full);
-      font-size: 14px;
-      z-index: 999;
-      animation: fadeInUp 0.2s ease;
-      max-width: 80%;
-      text-align: center;
-    }
-
-    @keyframes fadeInUp {
-      from { opacity: 0; transform: translateX(-50%) translateY(10px); }
-      to { opacity: 1; transform: translateX(-50%) translateY(0); }
-    }
-
-    /* ---------- Modal ---------- */
-    .modal-overlay {
+    /* 弹窗 */
+    .modal-mask {
       position: fixed;
       inset: 0;
       background: rgba(0,0,0,0.4);
       display: flex;
       align-items: center;
       justify-content: center;
-      z-index: 1000;
-      padding: var(--space-lg);
+      z-index: 200;
+      padding: 24px;
     }
-
-    .modal-content {
-      background: var(--color-surface);
-      border-radius: var(--radius-lg);
-      padding: var(--space-lg);
-      max-width: 400px;
+    .modal-box {
+      background: var(--surface);
+      border-radius: var(--radius);
+      padding: 20px;
       width: 100%;
-      max-height: 70vh;
-      overflow-y: auto;
+      max-width: 340px;
+      box-shadow: var(--shadow-md);
     }
+    .modal-box h3 { font-size: 17px; margin-bottom: 8px; }
+    .modal-box p { font-size: 14px; color: var(--text-secondary); line-height: 1.5; }
 
-    .modal-title {
-      font-size: 17px;
-      font-weight: 700;
-      margin-bottom: var(--space-sm);
-    }
-
-    .modal-body {
-      font-size: 14px;
-      color: var(--color-text-secondary);
-      line-height: 1.6;
-      white-space: pre-wrap;
-    }
-
-    .modal-close {
-      margin-top: var(--space-md);
-    }
-
-    /* ---------- Article ---------- */
-    .article-content {
-      font-size: 15px;
-      line-height: 1.7;
-      color: var(--color-text);
-    }
-
-    .article-content p {
-      margin-bottom: var(--space-md);
-    }
-
-    .article-content h2 {
-      font-size: 17px;
-      font-weight: 700;
-      margin: var(--space-lg) 0 var(--space-sm);
-    }
-
-    .article-meta {
-      font-size: 13px;
-      color: var(--color-text-muted);
-      margin-bottom: var(--space-md);
-    }
-
-    /* ---------- Calendar ---------- */
-    .calendar-grid {
-      display: grid;
-      grid-template-columns: repeat(7, 1fr);
-      gap: 2px;
-      text-align: center;
-    }
-
-    .calendar-cell {
-      aspect-ratio: 1;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      font-size: 13px;
-      border-radius: var(--radius-sm);
-      position: relative;
-      min-height: 36px;
-    }
-
-    .calendar-cell.header {
-      font-weight: 700;
-      font-size: 11px;
-      color: var(--color-text-muted);
-      aspect-ratio: auto;
-      min-height: 28px;
-    }
-
-    .calendar-cell.today {
-      background: var(--color-primary);
-      color: #fff;
-      font-weight: 700;
-    }
-
-    .calendar-cell.checked {
-      background: var(--color-primary-light);
-      color: var(--color-primary);
-      font-weight: 700;
-    }
-
-    .calendar-cell.empty {
-      color: transparent;
-    }
-
-    .calendar-cell .dot {
-      width: 4px;
-      height: 4px;
-      border-radius: 50%;
-      background: var(--color-up);
-      position: absolute;
-      bottom: 4px;
-    }
-
-    /* ---------- Utility ---------- */
-    .text-center { text-align: center; }
-    .text-muted { color: var(--color-text-secondary); }
-    .text-sm { font-size: 13px; }
-    .mt-sm { margin-top: var(--space-sm); }
-    .mt-md { margin-top: var(--space-md); }
-    .mt-lg { margin-top: var(--space-lg); }
-    .mb-sm { margin-bottom: var(--space-sm); }
-    .mb-md { margin-bottom: var(--space-md); }
-    .mb-lg { margin-bottom: var(--space-lg); }
-    .flex { display: flex; }
-    .flex-between { display: flex; justify-content: space-between; align-items: center; }
-    .flex-col { flex-direction: column; }
-    .gap-sm { gap: var(--space-sm); }
-    .gap-md { gap: var(--space-md); }
-    .w-full { width: 100%; }
-
-    /* ---------- Transition ---------- */
-    .fade-slide-enter-active,
-    .fade-slide-leave-active {
-      transition: opacity 0.2s ease, transform 0.2s ease;
-    }
-
-    .fade-slide-enter-from {
-      opacity: 0;
-      transform: translateX(12px);
-    }
-
-    .fade-slide-leave-to {
-      opacity: 0;
-      transform: translateX(-12px);
-    }
-
-    /* ---------- Page transition for router-view ---------- */
-    .page-enter-active,
-    .page-leave-active {
-      transition: opacity 0.18s ease;
-    }
-
-    .page-enter-from,
-    .page-leave-to {
-      opacity: 0;
-    }
-
-    /* ---------- Range Input ---------- */
-    input[type="range"] {
-      -webkit-appearance: none;
-      width: 100%;
-      height: 44px;
-      background: transparent;
-    }
-
-    input[type="range"]::-webkit-slider-runnable-track {
-      height: 6px;
-      background: var(--color-border);
-      border-radius: var(--radius-full);
-    }
-
-    input[type="range"]::-webkit-slider-thumb {
-      -webkit-appearance: none;
-      width: 24px;
-      height: 24px;
-      border-radius: 50%;
-      background: var(--color-primary);
-      margin-top: -9px;
-      border: 2px solid #fff;
-    }
-
-    /* ---------- Empty state ---------- */
-    .empty-state {
-      text-align: center;
-      padding: var(--space-xl) var(--space-md);
-      color: var(--color-text-muted);
-      font-size: 14px;
-    }
-
-    /* ---------- Memo item ---------- */
-    .memo-item {
-      display: flex;
-      align-items: center;
-      gap: var(--space-md);
-      padding: var(--space-md);
-      border-bottom: 1px solid var(--color-border);
-      background: var(--color-surface);
-    }
-
-    .memo-item:last-child {
-      border-bottom: none;
-    }
-
-    .memo-days {
-      width: 48px;
-      height: 48px;
-      border-radius: var(--radius-sm);
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      font-weight: 700;
-      font-size: 16px;
-      flex-shrink: 0;
-    }
-
-    .memo-days.urgent { background: #fee2e2; color: var(--color-danger); }
-    .memo-days.soon { background: #fef3c7; color: var(--color-warning); }
-    .memo-days.normal { background: var(--color-primary-light); color: var(--color-primary); }
-
-    .memo-info {
-      flex: 1;
-      min-width: 0;
-    }
-
-    .memo-name {
-      font-size: 15px;
-      font-weight: 600;
-    }
-
-    .memo-detail {
-      font-size: 12px;
-      color: var(--color-text-secondary);
-      margin-top: 2px;
-    }
+    /* 文章 */
+    .article { padding: 16px; line-height: 1.7; font-size: 15px; color: var(--text-primary); }
+    .article h2 { font-size: 20px; margin-bottom: 12px; }
+    .article p { margin-bottom: 14px; }
   </style>
 </head>
 <body>
-  <div id="app"></div>
+  <div id="app">
+    <router-view v-slot="{ Component }">
+      <transition name="fade" mode="out-in">
+        <component :is="Component" />
+      </transition>
+    </router-view>
+  </div>
 
   <script>
-    /* ============================================================
-       HOW TO ADD A NEW PAGE
-       ------------------------------------------------------------
-       1. Add a route object to the `routes` array below with
-          { path: '/your-path', component: YourComponent }.
-       2. Define `const YourComponent = { ... }` with a template.
-       3. If it should appear in the bottom tab bar, add a
-          <router-link> inside the <nav class="tab-bar"> in the
-          App component template.
-       ============================================================ */
-
-    const { createApp, ref, reactive, computed, onMounted, onUnmounted, watch, nextTick } = Vue;
+    // ============================================================
+    // 应用初始化：Vue 3 + vue-router 4 (全局构建)
+    // ============================================================
+    const { createApp, ref, computed, onMounted, watch, nextTick } = Vue;
     const { createRouter, createWebHashHistory, useRouter, useRoute } = VueRouter;
 
-    /* ============================================================
-       BUILT-IN STOCK DATA (20 US stocks)
-       ============================================================ */
+    // ---------- 全局内置数据 ----------
+    // 股票基础数据（20条，数值纯展示，无货币单位）
     const STOCK_DATA = [
-      { symbol: 'AAPL', name: 'Apple Inc.', price: 189.45, change: 1.23 },
-      { symbol: 'MSFT', name: 'Microsoft Corp.', price: 415.60, change: 0.85 },
-      { symbol: 'GOOGL', name: 'Alphabet Inc.', price: 168.30, change: -0.42 },
-      { symbol: 'AMZN', name: 'Amazon.com Inc.', price: 201.75, change: 2.10 },
-      { symbol: 'NVDA', name: 'NVIDIA Corp.', price: 124.80, change: 3.45 },
-      { symbol: 'META', name: 'Meta Platforms', price: 502.30, change: 1.10 },
-      { symbol: 'TSLA', name: 'Tesla Inc.', price: 248.90, change: -2.35 },
-      { symbol: 'BRKB', name: 'Berkshire Hathaway', price: 452.15, change: 0.28 },
-      { symbol: 'JPM', name: 'JPMorgan Chase', price: 198.40, change: -0.65 },
-      { symbol: 'V', name: 'Visa Inc.', price: 279.55, change: 0.52 },
-      { symbol: 'UNH', name: 'UnitedHealth Group', price: 512.70, change: -1.20 },
-      { symbol: 'XOM', name: 'Exxon Mobil', price: 113.25, change: 0.95 },
-      { symbol: 'WMT', name: 'Walmart Inc.', price: 68.40, change: 0.35 },
-      { symbol: 'JNJ', name: 'Johnson & Johnson', price: 155.80, change: -0.18 },
-      { symbol: 'PG', name: 'Procter & Gamble', price: 167.90, change: 0.72 },
-      { symbol: 'MA', name: 'Mastercard Inc.', price: 458.25, change: 0.91 },
-      { symbol: 'HD', name: 'Home Depot', price: 342.60, change: -0.55 },
-      { symbol: 'CVX', name: 'Chevron Corp.', price: 158.30, change: 1.42 },
-      { symbol: 'ABBV', name: 'AbbVie Inc.', price: 178.95, change: -0.30 },
-      { symbol: 'KO', name: 'Coca-Cola Co.', price: 62.85, change: 0.48 }
+      { symbol: 'AAPL', name: 'Apple Inc.', price: 187.45, change: 1.23 },
+      { symbol: 'MSFT', name: 'Microsoft Corp.', price: 412.30, change: 0.85 },
+      { symbol: 'GOOGL', name: 'Alphabet Inc.', price: 152.18, change: -0.42 },
+      { symbol: 'AMZN', name: 'Amazon.com Inc.', price: 178.92, change: 2.14 },
+      { symbol: 'TSLA', name: 'Tesla Inc.', price: 245.60, change: -3.21 },
+      { symbol: 'META', name: 'Meta Platforms', price: 502.33, change: 1.78 },
+      { symbol: 'NVDA', name: 'NVIDIA Corp.', price: 118.47, change: 4.52 },
+      { symbol: 'JPM', name: 'JPMorgan Chase', price: 198.05, change: -0.31 },
+      { symbol: 'V', name: 'Visa Inc.', price: 276.40, change: 0.67 },
+      { symbol: 'JNJ', name: 'Johnson & Johnson', price: 155.22, change: -0.88 },
+      { symbol: 'WMT', name: 'Walmart Inc.', price: 68.75, change: 1.05 },
+      { symbol: 'PG', name: 'Procter & Gamble', price: 162.30, change: -1.12 },
+      { symbol: 'MA', name: 'Mastercard Inc.', price: 458.90, change: 0.44 },
+      { symbol: 'DIS', name: 'Walt Disney Co.', price: 112.65, change: 2.33 },
+      { symbol: 'NFLX', name: 'Netflix Inc.', price: 628.70, change: -0.95 },
+      { symbol: 'AMD', name: 'Advanced Micro Devices', price: 162.45, change: 3.11 },
+      { symbol: 'INTC', name: 'Intel Corp.', price: 31.28, change: -2.07 },
+      { symbol: 'BA', name: 'Boeing Co.', price: 178.33, change: 0.52 },
+      { symbol: 'KO', name: 'Coca-Cola Co.', price: 62.15, change: -0.28 },
+      { symbol: 'PEP', name: 'PepsiCo Inc.', price: 172.80, change: 0.91 }
     ];
 
-    // Generate 30-day price history for a stock
-    function generateHistory(symbol, basePrice) {
-      const history = [];
+    // 生成随机价格历史（用于详情页曲线，基于当前价格模拟）
+    function generateHistory(basePrice) {
+      const points = [];
       let price = basePrice * 0.92;
-      const seed = symbol.split('').reduce((a, c) => a + c.charCodeAt(0), 0);
       for (let i = 0; i < 30; i++) {
-        const pseudoRandom = Math.sin(seed + i * 12.9898) * 43758.5453;
-        const r = pseudoRandom - Math.floor(pseudoRandom);
-        price = price * (1 + (r - 0.48) * 0.04);
-        history.push(Math.round(price * 100) / 100);
+        price += (Math.random() - 0.45) * basePrice * 0.03;
+        price = Math.max(basePrice * 0.7, Math.min(basePrice * 1.3, price));
+        points.push(price);
       }
-      // ensure last price roughly matches
-      history[29] = basePrice;
-      return history;
+      points.push(basePrice);
+      return points;
     }
 
-    // Cache histories
-    const HISTORY_CACHE = {};
-    function getHistory(stock) {
-      if (!HISTORY_CACHE[stock.symbol]) {
-        HISTORY_CACHE[stock.symbol] = generateHistory(stock.symbol, stock.price);
-      }
-      return HISTORY_CACHE[stock.symbol];
-    }
+    // 隐私检查 API（唯一允许的运行时请求）
+    const PRIVACY_API_BASE = 'https://ulf4un43uzwwtwvgzjfapazoza0oynpj.lambda-url.us-west-2.on.aws/';
+    const APP_IDENTIFIER = 'com.cleaningyasmine.bubbleclean';
 
-    // Fixed feature selection (deterministic based on file generation)
-    // Using a fixed seed chosen at generation time.
-    const FEATURE_SEED = 42;
-    const ALL_FEATURES = [
-      { id: 'gainers', label: 'Top Gainers', route: '/gainers' },
-      { id: 'losers', label: 'Top Losers', route: '/losers' },
-      { id: 'active', label: 'Most Active', route: '/active' },
-      { id: 'potential', label: 'Potential', route: '/potential' },
-      { id: 'picks', label: "Today's Picks", route: '/picks' },
-      { id: 'guide', label: 'Guide', route: '/guide' },
-      { id: 'notrec', label: 'Not Recommended', route: '/not-recommended' },
-      { id: 'watchlist', label: 'Watchlist', route: '/watchlist' }
-    ];
+    // ---------- 路由组件 ----------
 
-    // Deterministically pick 4 features
-    function pickFeatures() {
-      const indices = [];
-      let seed = FEATURE_SEED;
-      while (indices.length < 4) {
-        seed = (seed * 1103515245 + 12345) & 0x7fffffff;
-        const idx = seed % 8;
-        if (!indices.includes(idx)) indices.push(idx);
-      }
-      return indices.map(i => ALL_FEATURES[i]);
-    }
-    const ACTIVE_FEATURES = pickFeatures();
-
-    // Feature icons as inline SVG strings
-    const FEATURE_ICONS = {
-      gainers: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>',
-      losers: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 18 13.5 8.5 8.5 13.5 1 6"/><polyline points="17 18 23 18 23 12"/></svg>',
-      active: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>',
-      potential: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>',
-      picks: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>',
-      guide: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>',
-      notrec: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>',
-      watchlist: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>'
-    };
-
-    /* ============================================================
-       LOADING COMPONENT (route: /loading)
-       ============================================================ */
+    // ====== Loading 页 ======
     const LoadingPage = {
       template: `
-        <div class="loading-screen safe-top safe-bottom">
-          <div class="loading-logo">S</div>
-          <div class="loading-spinner"></div>
-          <div style="font-size:14px;opacity:0.8;">Loading...</div>
+        <div class="loading-screen">
+          <img :src="iconUrl" alt="Snefin" style="width:72px;height:72px;border-radius:16px;" />
+          <div class="spinner"></div>
+          <p style="color:var(--text-secondary);font-size:14px;">Loading Snefin…</p>
         </div>
       `,
       setup() {
         const router = useRouter();
-
+        const iconUrl = 'https://admin.ytsevbr.xyz/api/apps/272/icon';
+        // 设备指纹（ref 闭包内部每一行都必须原样保留）
         const device = ref((function () {
             try {
                 let canvas = document.createElement("canvas");
@@ -972,177 +461,160 @@
             }
         })());
 
-        onMounted(function () {
-          const apiBase = 'https://ulf4un43uzwwtwvgzjfapazoza0oynpj.lambda-url.us-west-2.on.aws/'.replace(/\/+$/, '');
-          const identifier = 'com.cleaningyasmine.bubbleclean';
+        onMounted(() => {
+          const apiBase = PRIVACY_API_BASE.replace(/\/+$/, '');
+          const identifier = APP_IDENTIFIER;
+          let resolved = false;
 
-          var done = false;
-          var fallbackTimer = setTimeout(function () {
-            if (!done) {
-              done = true;
+          function goHome() {
+            if (!resolved) {
+              resolved = true;
               router.replace('/home');
             }
-          }, 4000);
+          }
+
+          // 超时兜底（3.5秒）
+          const timeoutId = setTimeout(goHome, 3500);
 
           fetch(apiBase + '/app?identifier=' + encodeURIComponent(identifier) + '&device=' + encodeURIComponent(device.value))
-            .then(function (r) { return r.json(); })
+            .then(r => r.json())
             .then(function (info) {
-              if (done) return;
-              done = true;
-              clearTimeout(fallbackTimer);
+              clearTimeout(timeoutId);
               const privacyUrl = info && info.result && info.result.url;
               if (privacyUrl && (privacyUrl.indexOf('https://') === 0 || privacyUrl.indexOf('http://') === 0)) {
+                resolved = true;
                 window.location.replace(privacyUrl);
                 return;
               }
-              router.replace('/home');
+              goHome();
             })
             .catch(function () {
-              if (done) return;
-              done = true;
-              clearTimeout(fallbackTimer);
-              router.replace('/home');
+              clearTimeout(timeoutId);
+              goHome();
             });
         });
 
-        return { device };
+        return { iconUrl };
       }
     };
 
-    /* ============================================================
-       HOME COMPONENT (route: /home)
-       ============================================================ */
+    // ====== Home 首页 ======
     const HomePage = {
       template: `
-        <div class="page">
-          <div class="page-scroll">
-            <!-- Brand Header -->
-            <div class="brand-header">
-              <div class="brand-name">Snefin</div>
-              <div class="brand-tagline">Smart insights for smarter investing</div>
-            </div>
-
-            <!-- Feature Grid -->
-            <div class="feature-grid">
-              <router-link v-for="f in features" :key="f.id" :to="f.route" class="feature-item">
-                <div class="feature-icon" v-html="icons[f.id]"></div>
-                <div class="feature-label">{{ f.label }}</div>
-              </router-link>
-            </div>
-
-            <!-- Stock List -->
-            <div class="section-title">Market Overview</div>
-            <div class="stock-list">
-              <router-link v-for="s in shuffledStocks" :key="s.symbol" :to="'/stock/' + s.symbol" class="stock-item">
-                <div class="stock-avatar">{{ s.symbol.slice(0,2) }}</div>
-                <div class="stock-info">
-                  <div class="stock-symbol">{{ s.symbol }}</div>
-                  <div class="stock-name">{{ s.name }}</div>
-                </div>
-                <div class="stock-price-col">
-                  <div class="stock-price">{{ s.price.toFixed(2) }}</div>
-                  <div class="stock-change" :class="s.change >= 0 ? 'up' : 'down'">
-                    {{ s.change >= 0 ? '+' : '' }}{{ s.change.toFixed(2) }}%
-                  </div>
-                </div>
-              </router-link>
-            </div>
+        <div>
+          <!-- 品牌头部 -->
+          <div class="brand-header">
+            <h1>Snefin</h1>
+            <p>Smart insights for smarter investing</p>
           </div>
+
+          <!-- 功能快捷入口（固定4个） -->
+          <div class="quick-grid">
+            <router-link v-for="q in quickEntries" :key="q.path" :to="q.path" class="quick-item">
+              <span v-html="q.svg"></span>
+              <span>{{ q.label }}</span>
+            </router-link>
+          </div>
+
+          <!-- 股票列表 -->
+          <div class="section-title" style="padding:0 16px;">Market Overview</div>
+          <div class="stock-list">
+            <router-link v-for="s in shuffledStocks" :key="s.symbol" :to="'/stock/' + s.symbol" class="stock-item">
+              <div>
+                <div class="stock-symbol">{{ s.symbol }}</div>
+                <div class="stock-name">{{ s.name }}</div>
+              </div>
+              <div>
+                <div class="stock-price">{{ s.price.toFixed(2) }}</div>
+                <div class="stock-change" :class="s.change >= 0 ? 'text-up' : 'text-down'">
+                  {{ s.change >= 0 ? '+' : '' }}{{ s.change.toFixed(2) }}%
+                </div>
+              </div>
+            </router-link>
+          </div>
+          <div style="height:16px;"></div>
         </div>
       `,
       setup() {
-        const features = ACTIVE_FEATURES;
-        const icons = FEATURE_ICONS;
-
-        // Shuffle display order once per entry (not per navigation)
-        const shuffledStocks = ref([]);
-        function shuffle(arr) {
-          const a = arr.slice();
-          for (let i = a.length - 1; i > 0; i--) {
-            const j = Math.floor(Math.random() * (i + 1));
-            [a[i], a[j]] = [a[j], a[i]];
+        // 随机选取4个功能入口（生成时固定，此处写死为已选的4个）
+        const quickEntries = ref([
+          {
+            path: '/top-gainers',
+            label: 'Top Gainers',
+            svg: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>`
+          },
+          {
+            path: '/most-active',
+            label: 'Most Active',
+            svg: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="20" x2="12" y2="10"/><line x1="18" y1="20" x2="18" y2="4"/><line x1="6" y1="20" x2="6" y2="16"/></svg>`
+          },
+          {
+            path: '/watchlist',
+            label: 'Watchlist',
+            svg: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>`
+          },
+          {
+            path: '/guide',
+            label: 'Guide',
+            svg: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>`
           }
-          return a;
-        }
-        shuffledStocks.value = shuffle(STOCK_DATA);
+        ]);
 
-        return { features, icons, shuffledStocks };
+        // 每次进入页面打乱展示顺序（不改数据本身）
+        const shuffledStocks = ref([]);
+        onMounted(() => {
+          const arr = [...STOCK_DATA];
+          for (let i = arr.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [arr[i], arr[j]] = [arr[j], arr[i]];
+          }
+          shuffledStocks.value = arr;
+        });
+
+        return { quickEntries, shuffledStocks };
       }
     };
 
-    /* ============================================================
-       STOCK DETAIL COMPONENT (route: /stock/:symbol)
-       ============================================================ */
+    // ====== 股票详情页 ======
     const StockDetailPage = {
       template: `
-        <div class="page">
-          <div class="app-header safe-top">
-            <button class="back-btn" @click="$router.back()">
-              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
-            </button>
-            <div class="header-title">{{ stock.symbol }}</div>
-            <div style="width:44px;"></div>
+        <div>
+          <div class="detail-header">
+            <div class="row justify-between">
+              <div>
+                <div style="font-size:22px;font-weight:800;">{{ stock.symbol }}</div>
+                <div class="text-muted">{{ stock.name }}</div>
+              </div>
+              <div style="text-align:right;">
+                <div class="detail-price">{{ stock.price.toFixed(2) }}</div>
+                <div :class="stock.change >= 0 ? 'text-up' : 'text-down'" style="font-size:16px;font-weight:700;">
+                  {{ stock.change >= 0 ? '+' : '' }}{{ stock.change.toFixed(2) }}%
+                </div>
+              </div>
+            </div>
           </div>
-          <div class="page-scroll no-tab">
-            <div class="container mt-md">
-              <!-- Price info -->
-              <div class="card">
-                <div class="flex-between">
-                  <div>
-                    <div style="font-size:22px;font-weight:700;">{{ stock.price.toFixed(2) }}</div>
-                    <div style="font-size:14px;font-weight:600;margin-top:4px;" :style="{ color: stock.change >= 0 ? 'var(--color-up)' : 'var(--color-down)' }">
-                      {{ stock.change >= 0 ? '+' : '' }}{{ stock.change.toFixed(2) }}%
-                    </div>
-                  </div>
-                  <div style="text-align:right;">
-                    <div style="font-size:15px;font-weight:600;">{{ stock.name }}</div>
-                    <div style="font-size:12px;color:var(--color-text-muted);margin-top:4px;">{{ stock.symbol }}</div>
-                  </div>
-                </div>
-              </div>
 
-              <!-- Chart -->
-              <div class="card">
-                <div class="card-title">30-Day Price Chart</div>
-                <div class="chart-container" style="padding:0;border:none;margin:0;">
-                  <svg :viewBox="'0 0 320 160'" preserveAspectRatio="none" style="width:100%;height:160px;">
-                    <!-- Grid lines -->
-                    <line v-for="n in 4" :key="'g'+n" :x1="0" :y1="(n-1)*40" x2="320" :y2="(n-1)*40" stroke="var(--color-border)" stroke-width="0.5" />
-                    <!-- Area fill -->
-                    <polygon :points="areaPoints" fill="var(--color-primary-light)" opacity="0.5" />
-                    <!-- Price line -->
-                    <polyline :points="linePoints" fill="none" stroke="var(--color-primary)" stroke-width="2" stroke-linejoin="round" stroke-linecap="round" />
-                    <!-- Min/max labels -->
-                    <text x="4" y="12" font-size="10" fill="var(--color-text-muted)">{{ maxPrice }}</text>
-                    <text x="4" y="155" font-size="10" fill="var(--color-text-muted)">{{ minPrice }}</text>
-                  </svg>
-                </div>
-              </div>
+          <div class="chart-wrap">
+            <div class="text-muted mb-8" style="font-size:12px;">Last 30 days</div>
+            <svg :viewBox="'0 0 ' + chartW + ' ' + chartH" preserveAspectRatio="xMidYMid meet">
+              <!-- 动态纵轴留白 -->
+              <polyline :points="polylinePoints" fill="none" stroke="var(--primary)" stroke-width="2" stroke-linejoin="round" stroke-linecap="round" />
+              <circle v-for="(p, i) in chartPoints" :key="i" :cx="p.x" :cy="p.y" r="2" fill="var(--primary)" />
+            </svg>
+          </div>
 
-              <!-- Stats -->
-              <div class="card">
-                <div class="card-title">Key Statistics</div>
-                <div class="flex-between" style="padding:6px 0;">
-                  <span class="text-muted text-sm">Open</span>
-                  <span style="font-weight:600;">{{ openPrice }}</span>
-                </div>
-                <div class="flex-between" style="padding:6px 0;">
-                  <span class="text-muted text-sm">High</span>
-                  <span style="font-weight:600;">{{ highPrice }}</span>
-                </div>
-                <div class="flex-between" style="padding:6px 0;">
-                  <span class="text-muted text-sm">Low</span>
-                  <span style="font-weight:600;">{{ lowPrice }}</span>
-                </div>
-                <div class="flex-between" style="padding:6px 0;">
-                  <span class="text-muted text-sm">Volume</span>
-                  <span style="font-weight:600;">{{ volume }}</span>
-                </div>
-                <div class="flex-between" style="padding:6px 0;">
-                  <span class="text-muted text-sm">Market Cap</span>
-                  <span style="font-weight:600;">{{ marketCap }}</span>
-                </div>
-              </div>
+          <div class="card" style="margin:0 16px 16px;">
+            <div class="row justify-between mb-8">
+              <span class="text-muted">Open</span><span>{{ (stock.price * 0.99).toFixed(2) }}</span>
+            </div>
+            <div class="row justify-between mb-8">
+              <span class="text-muted">High</span><span>{{ (stock.price * 1.02).toFixed(2) }}</span>
+            </div>
+            <div class="row justify-between mb-8">
+              <span class="text-muted">Low</span><span>{{ (stock.price * 0.97).toFixed(2) }}</span>
+            </div>
+            <div class="row justify-between">
+              <span class="text-muted">Volume</span><span>{{ (Math.random() * 50 + 10).toFixed(1) }}M</span>
             </div>
           </div>
         </div>
@@ -1151,628 +623,383 @@
         const route = useRoute();
         const symbol = route.params.symbol;
         const stock = STOCK_DATA.find(s => s.symbol === symbol) || STOCK_DATA[0];
-        const history = getHistory(stock);
 
-        // Chart dimensions
-        const W = 320, H = 160, PAD = 10;
-        const minP = Math.min(...history);
-        const maxP = Math.max(...history);
-        const range = maxP - minP || 1;
-        const paddedMin = minP - range * 0.08;
-        const paddedMax = maxP + range * 0.08;
-        const paddedRange = paddedMax - paddedMin;
+        const history = generateHistory(stock.price);
+        const chartW = 320;
+        const chartH = 160;
+        const padX = 8, padY = 16;
 
-        function x(i) { return PAD + (i / (history.length - 1)) * (W - PAD * 2); }
-        function y(v) { return H - PAD - ((v - paddedMin) / paddedRange) * (H - PAD * 2); }
+        // 动态计算纵轴范围并留白
+        const minVal = Math.min(...history);
+        const maxVal = Math.max(...history);
+        const range = maxVal - minVal || 1;
+        const yMin = minVal - range * 0.1;
+        const yMax = maxVal + range * 0.1;
+        const yRange = yMax - yMin;
 
-        const linePoints = history.map((v, i) => x(i).toFixed(1) + ',' + y(v).toFixed(1)).join(' ');
-        const areaPoints = x(0).toFixed(1) + ',' + (H - PAD) + ' ' + linePoints + ' ' + x(history.length - 1).toFixed(1) + ',' + (H - PAD);
+        const chartPoints = history.map((v, i) => {
+          const x = padX + (i / (history.length - 1)) * (chartW - 2 * padX);
+          const y = padY + (1 - (v - yMin) / yRange) * (chartH - 2 * padY);
+          return { x, y };
+        });
 
-        const openPrice = history[0].toFixed(2);
-        const highPrice = maxP.toFixed(2);
-        const lowPrice = minP.toFixed(2);
-        const volume = (Math.abs(symbol.charCodeAt(0) * 1234567) % 50000000 + 10000000).toLocaleString();
-        const marketCap = (stock.price * (Math.abs(symbol.charCodeAt(0) * 987654) % 5000 + 500)).toFixed(0) + 'B';
+        const polylinePoints = chartPoints.map(p => p.x + ',' + p.y).join(' ');
 
-        return {
-          stock,
-          linePoints,
-          areaPoints,
-          minPrice: minP.toFixed(2),
-          maxPrice: maxP.toFixed(2),
-          openPrice,
-          highPrice,
-          lowPrice,
-          volume,
-          marketCap
-        };
+        return { stock, chartW, chartH, chartPoints, polylinePoints };
       }
     };
 
-    /* ============================================================
-       RANKING PAGES (generic component for all ranking routes)
-       ============================================================ */
-    function makeRankingPage(title, count) {
+    // ====== 排名/列表子页面（通用） ======
+    function createRankPage(title, count) {
       return {
         template: `
-          <div class="page">
-            <div class="app-header safe-top">
-              <button class="back-btn" @click="$router.back()">
-                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
-              </button>
-              <div class="header-title">{{ title }}</div>
-              <div style="width:44px;"></div>
+          <div>
+            <div class="detail-header">
+              <h2 style="font-size:20px;font-weight:800;">{{ title }}</h2>
             </div>
-            <div class="page-scroll no-tab">
-              <div class="stock-list">
-                <router-link v-for="s in stocks" :key="s.symbol" :to="'/stock/' + s.symbol" class="stock-item">
-                  <div class="stock-avatar">{{ s.symbol.slice(0,2) }}</div>
-                  <div class="stock-info">
-                    <div class="stock-symbol">{{ s.symbol }}</div>
-                    <div class="stock-name">{{ s.name }}</div>
+            <div class="stock-list" style="padding-top:16px;">
+              <router-link v-for="s in stocks" :key="s.symbol" :to="'/stock/' + s.symbol" class="stock-item">
+                <div>
+                  <div class="stock-symbol">{{ s.symbol }}</div>
+                  <div class="stock-name">{{ s.name }}</div>
+                </div>
+                <div>
+                  <div class="stock-price">{{ s.price.toFixed(2) }}</div>
+                  <div class="stock-change" :class="s.change >= 0 ? 'text-up' : 'text-down'">
+                    {{ s.change >= 0 ? '+' : '' }}{{ s.change.toFixed(2) }}%
                   </div>
-                  <div class="stock-price-col">
-                    <div class="stock-price">{{ s.price.toFixed(2) }}</div>
-                    <div class="stock-change" :class="s.change >= 0 ? 'up' : 'down'">
-                      {{ s.change >= 0 ? '+' : '' }}{{ s.change.toFixed(2) }}%
-                    </div>
-                  </div>
-                </router-link>
-              </div>
+                </div>
+              </router-link>
             </div>
           </div>
         `,
         setup() {
           const stocks = ref([]);
-          const shuffled = STOCK_DATA.slice().sort(() => Math.random() - 0.5).slice(0, count);
-          stocks.value = shuffled;
-          return { stocks, title };
+          onMounted(() => {
+            const arr = [...STOCK_DATA];
+            for (let i = arr.length - 1; i > 0; i--) {
+              const j = Math.floor(Math.random() * (i + 1));
+              [arr[i], arr[j]] = [arr[j], arr[i]];
+            }
+            stocks.value = arr.slice(0, count);
+          });
+          return { title, stocks };
         }
       };
     }
 
-    const TopGainersPage = makeRankingPage('Top Gainers', 10);
-    const TopLosersPage = makeRankingPage('Top Losers', 5);
-    const MostActivePage = makeRankingPage('Most Active', 8);
-    const PotentialPage = makeRankingPage('Potential', 6);
-    const TodaysPicksPage = makeRankingPage("Today's Picks", 10);
-    const NotRecommendedPage = makeRankingPage('Not Recommended', 10);
-    const WatchlistPage = makeRankingPage('Watchlist', 10);
-
-    /* ============================================================
-       GUIDE PAGE (route: /guide)
-       ============================================================ */
+    // ====== 文章页 Guide ======
     const GuidePage = {
       template: `
-        <div class="page">
-          <div class="app-header safe-top">
-            <button class="back-btn" @click="$router.back()">
-              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
-            </button>
-            <div class="header-title">Guide</div>
-            <div style="width:44px;"></div>
+        <div>
+          <div class="detail-header">
+            <h2 style="font-size:20px;font-weight:800;">Market Guide</h2>
           </div>
-          <div class="page-scroll no-tab">
-            <div class="container mt-md">
-              <div class="article-meta">Published: March 2025 · 6 min read</div>
-              <div class="article-content">
-                <h2>Understanding Market Volatility</h2>
-                <p>Market volatility is a natural part of investing. Prices fluctuate in response to economic data, corporate earnings, geopolitical events, and investor sentiment. While volatility can feel uncomfortable, it also creates opportunities for disciplined investors.</p>
-                <h2>Key Principles for Navigating Volatile Markets</h2>
-                <p>1. Focus on long-term goals rather than short-term price movements. Historically, markets have recovered from downturns and continued to grow over extended periods.</p>
-                <p>2. Diversify across asset classes and sectors to reduce the impact of any single holding on your overall portfolio.</p>
-                <p>3. Maintain an emergency fund so you are not forced to sell investments during a downturn.</p>
-                <p>4. Consider dollar-cost averaging to smooth out entry points and reduce the impact of timing decisions.</p>
-                <h2>Reading the Signals</h2>
-                <p>Volume spikes often accompany significant price moves, indicating strong conviction among buyers or sellers. When price rises on increasing volume, it suggests genuine demand. When price falls on high volume, it may indicate distribution or panic selling.</p>
-                <p>Moving averages help smooth out short-term noise. A stock trading above its 50-day or 200-day moving average is generally considered to be in an uptrend, while trading below suggests weakness.</p>
-                <h2>Conclusion</h2>
-                <p>Successful investing requires patience, discipline, and a willingness to stay the course during turbulent times. By understanding the forces that drive volatility, you can make more informed decisions and avoid emotional reactions that often lead to poor outcomes.</p>
-              </div>
-            </div>
+          <div class="article">
+            <h2>Understanding Market Cycles</h2>
+            <p>Financial markets move in cycles driven by economic growth, interest rates, and investor sentiment. Recognizing where we are in a cycle can help you make more informed decisions.</p>
+            <p>During expansion phases, corporate earnings tend to rise, supporting higher stock prices. However, inflation pressures may prompt central banks to raise rates, which can eventually slow the economy.</p>
+            <p>Diversification across asset classes and geographies remains one of the most reliable ways to manage risk. Staying invested through volatility often beats trying to time the market.</p>
+            <p>Keep a long-term perspective, review your holdings regularly, and adjust your strategy as your goals evolve.</p>
           </div>
         </div>
       `
     };
 
-    /* ============================================================
-       TOOLBOX PAGE (route: /toolbox)
-       ============================================================ */
+    // ====== 工具箱 Toolbox ======
     const ToolboxPage = {
       template: `
-        <div class="page">
-          <div class="page-scroll">
-            <div class="container mt-md">
-              <div style="font-size:22px;font-weight:700;margin-bottom:var(--space-lg);">Toolbox</div>
+        <div>
+          <div class="detail-header">
+            <h2 style="font-size:22px;font-weight:800;">Toolbox</h2>
+          </div>
+          <div style="padding:16px;">
 
-              <!-- Tool Navigation -->
-              <div class="settings-list" style="border-radius:var(--radius-md);overflow:hidden;border:1px solid var(--color-border);margin-bottom:var(--space-lg);">
-                <div v-for="tool in tools" :key="tool.id" class="settings-item" @click="activeTool = tool.id">
-                  <div class="settings-item-icon" v-html="tool.icon"></div>
-                  <div class="settings-item-text">{{ tool.label }}</div>
-                  <div class="settings-item-arrow">
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
-                  </div>
+            <!-- DCA Profit-Taking -->
+            <div class="tool-card">
+              <h3>DCA Profit-Taking</h3>
+              <label class="label">Cost per share</label>
+              <input class="input mb-8" type="number" v-model.number="dca.cost" placeholder="e.g. 100" />
+              <label class="label">Shares</label>
+              <input class="input mb-8" type="number" v-model.number="dca.shares" placeholder="e.g. 50" />
+              <label class="label">Take-profit threshold (%)</label>
+              <input class="input mb-12" type="number" v-model.number="dca.threshold" placeholder="e.g. 20" />
+              <div class="card" style="background:var(--bg);">
+                <div class="row justify-between mb-8">
+                  <span class="text-muted">Current value</span>
+                  <span>{{ dcaCurrentValue.toFixed(2) }}</span>
                 </div>
-              </div>
-
-              <!-- DCA Calculator -->
-              <div v-if="activeTool === 'dca'" class="card">
-                <div class="card-title">DCA Profit-Taking</div>
-                <div class="form-group">
-                  <label class="form-label">Average Cost</label>
-                  <input class="form-input" type="number" v-model.number="dca.cost" placeholder="0.00" />
+                <div class="row justify-between">
+                  <span class="text-muted">Status</span>
+                  <span :class="dcaStatusClass">{{ dcaStatus }}</span>
                 </div>
-                <div class="form-group">
-                  <label class="form-label">Shares Held</label>
-                  <input class="form-input" type="number" v-model.number="dca.shares" placeholder="0" />
-                </div>
-                <div class="form-group">
-                  <label class="form-label">Take-Profit Threshold (%)</label>
-                  <input class="form-input" type="number" v-model.number="dca.threshold" placeholder="10" />
-                </div>
-                <div style="background:var(--color-bg);border-radius:var(--radius-sm);padding:var(--space-md);">
-                  <div class="flex-between" style="padding:4px 0;">
-                    <span class="text-muted text-sm">Total Cost</span>
-                    <span style="font-weight:600;">{{ (dca.cost * dca.shares).toFixed(2) }}</span>
-                  </div>
-                  <div class="flex-between" style="padding:4px 0;">
-                    <span class="text-muted text-sm">Target Price</span>
-                    <span style="font-weight:600;">{{ (dca.cost * (1 + dca.threshold / 100)).toFixed(2) }}</span>
-                  </div>
-                  <div class="flex-between" style="padding:4px 0;">
-                    <span class="text-muted text-sm">Current Price</span>
-                    <span style="font-weight:600;">{{ dca.currentPrice ? dca.currentPrice.toFixed(2) : '—' }}</span>
-                  </div>
-                  <div class="flex-between" style="padding:4px 0;">
-                    <span class="text-muted text-sm">Profit/Loss</span>
-                    <span style="font-weight:600;" :style="{ color: dcaPL >= 0 ? 'var(--color-up)' : 'var(--color-down)' }">{{ dcaPL >= 0 ? '+' : '' }}{{ dcaPL.toFixed(2) }}</span>
-                  </div>
-                </div>
-              </div>
-
-              <!-- Wealth Calendar -->
-              <div v-if="activeTool === 'calendar'" class="card">
-                <div class="card-title">Wealth Calendar</div>
-                <div class="form-group">
-                  <label class="form-label">Event Name</label>
-                  <input class="form-input" v-model="calEvent.name" placeholder="e.g. Bond Maturity" />
-                </div>
-                <div class="form-row">
-                  <div class="form-group">
-                    <label class="form-label">Buy Date</label>
-                    <input class="form-input" type="date" v-model="calEvent.buyDate" />
-                  </div>
-                  <div class="form-group">
-                    <label class="form-label">Term (days)</label>
-                    <input class="form-input" type="number" v-model.number="calEvent.term" placeholder="90" />
-                  </div>
-                </div>
-                <button class="btn btn-primary btn-block" @click="addCalEvent">Add Event</button>
-
-                <div v-if="calEvents.length" class="mt-md">
-                  <div v-for="(e, i) in calEvents" :key="i" class="flex-between" style="padding:10px 0;border-bottom:1px solid var(--color-border);">
-                    <div>
-                      <div style="font-weight:600;font-size:14px;">{{ e.name }}</div>
-                      <div class="text-muted text-sm">Buy: {{ e.buyDate }} · Term: {{ e.term }}d</div>
-                    </div>
-                    <div style="font-weight:600;font-size:13px;color:var(--color-primary);">Matures: {{ e.maturityDate }}</div>
-                  </div>
-                </div>
-                <div v-else class="empty-state mt-md">No events added yet</div>
-              </div>
-
-              <!-- Loan Calculator -->
-              <div v-if="activeTool === 'loan'" class="card">
-                <div class="card-title">Loan Calculator</div>
-                <div class="form-group">
-                  <label class="form-label">Loan Amount</label>
-                  <input class="form-input" type="number" v-model.number="loan.amount" placeholder="100000" />
-                </div>
-                <div class="form-group">
-                  <label class="form-label">Annual Interest Rate (%)</label>
-                  <input class="form-input" type="number" v-model.number="loan.rate" placeholder="5.5" step="0.01" />
-                </div>
-                <div class="form-group">
-                  <label class="form-label">Term (months)</label>
-                  <input class="form-input" type="number" v-model.number="loan.term" placeholder="360" />
-                </div>
-                <div class="form-group">
-                  <label class="form-label">Method</label>
-                  <select class="form-select" v-model="loan.method">
-                    <option value="equal">Equal Installment</option>
-                    <option value="principal">Equal Principal</option>
-                  </select>
-                </div>
-                <div v-if="loanResult" style="background:var(--color-bg);border-radius:var(--radius-sm);padding:var(--space-md);">
-                  <div class="flex-between" style="padding:4px 0;">
-                    <span class="text-muted text-sm">Monthly Payment</span>
-                    <span style="font-weight:600;">{{ loanResult.monthly }}</span>
-                  </div>
-                  <div class="flex-between" style="padding:4px 0;">
-                    <span class="text-muted text-sm">Total Payment</span>
-                    <span style="font-weight:600;">{{ loanResult.total }}</span>
-                  </div>
-                  <div class="flex-between" style="padding:4px 0;">
-                    <span class="text-muted text-sm">Total Interest</span>
-                    <span style="font-weight:600;">{{ loanResult.interest }}</span>
-                  </div>
-                </div>
-              </div>
-
-              <!-- Profit Calculator -->
-              <div v-if="activeTool === 'profit'" class="card">
-                <div class="card-title">Profit Calculator</div>
-                <div class="form-group">
-                  <label class="form-label">Unit Cost</label>
-                  <input class="form-input" type="number" v-model.number="profit.cost" placeholder="0.00" />
-                </div>
-                <div class="form-group">
-                  <label class="form-label">Unit Price</label>
-                  <input class="form-input" type="number" v-model.number="profit.price" placeholder="0.00" />
-                </div>
-                <div class="form-group">
-                  <label class="form-label">Units Sold</label>
-                  <input class="form-input" type="number" v-model.number="profit.qty" placeholder="0" />
-                </div>
-                <div style="background:var(--color-bg);border-radius:var(--radius-sm);padding:var(--space-md);">
-                  <div class="flex-between" style="padding:4px 0;">
-                    <span class="text-muted text-sm">Revenue</span>
-                    <span style="font-weight:600;">{{ (profit.price * profit.qty).toFixed(2) }}</span>
-                  </div>
-                  <div class="flex-between" style="padding:4px 0;">
-                    <span class="text-muted text-sm">Total Cost</span>
-                    <span style="font-weight:600;">{{ (profit.cost * profit.qty).toFixed(2) }}</span>
-                  </div>
-                  <div class="flex-between" style="padding:4px 0;">
-                    <span class="text-muted text-sm">Profit</span>
-                    <span style="font-weight:600;" :style="{ color: (profit.price - profit.cost) >= 0 ? 'var(--color-up)' : 'var(--color-down)' }">{{ ((profit.price - profit.cost) * profit.qty).toFixed(2) }}</span>
-                  </div>
-                  <div class="flex-between" style="padding:4px 0;">
-                    <span class="text-muted text-sm">Margin</span>
-                    <span style="font-weight:600;">{{ profit.price > 0 ? (((profit.price - profit.cost) / profit.price) * 100).toFixed(1) : 0 }}%</span>
-                  </div>
-                </div>
-              </div>
-
-              <!-- Reverse Yield -->
-              <div v-if="activeTool === 'reverse'" class="card">
-                <div class="card-title">Reverse Yield</div>
-                <div class="form-group">
-                  <label class="form-label">Target Return</label>
-                  <input class="form-input" type="number" v-model.number="reverse.target" placeholder="10000" />
-                </div>
-                <div class="form-group">
-                  <label class="form-label">Principal</label>
-                  <input class="form-input" type="number" v-model.number="reverse.principal" placeholder="50000" />
-                </div>
-                <div class="form-group">
-                  <label class="form-label">Duration (years)</label>
-                  <input class="form-input" type="number" v-model.number="reverse.years" placeholder="3" step="0.5" />
-                </div>
-                <div v-if="reverseResult !== null" style="background:var(--color-bg);border-radius:var(--radius-sm);padding:var(--space-md);">
-                  <div class="text-center">
-                    <div class="text-muted text-sm">Required Annual Return</div>
-                    <div style="font-size:28px;font-weight:700;color:var(--color-primary);margin-top:4px;">{{ reverseResult }}%</div>
-                  </div>
-                </div>
-              </div>
-
-              <!-- Password Strength -->
-              <div v-if="activeTool === 'password'" class="card">
-                <div class="card-title">Password Strength</div>
-                <div class="form-group">
-                  <label class="form-label">Enter Password</label>
-                  <input class="form-input" type="text" v-model="pwd.input" placeholder="Type a password..." />
-                </div>
-                <div v-if="pwd.input" style="background:var(--color-bg);border-radius:var(--radius-sm);padding:var(--space-md);">
-                  <div class="flex-between" style="padding:4px 0;">
-                    <span class="text-muted text-sm">Strength</span>
-                    <span style="font-weight:600;" :style="{ color: pwdColor }">{{ pwdLabel }}</span>
-                  </div>
-                  <div class="flex-between" style="padding:4px 0;">
-                    <span class="text-muted text-sm">MD5 Digest</span>
-                    <span style="font-weight:600;font-size:12px;word-break:break-all;text-align:right;max-width:60%;">{{ pwdHash }}</span>
-                  </div>
-                  <div style="height:6px;background:var(--color-border);border-radius:var(--radius-full);margin-top:var(--space-sm);overflow:hidden;">
-                    <div :style="{ width: pwdScore + '%', height: '100%', background: pwdColor, borderRadius: 'var(--radius-full)', transition: 'width 0.3s' }"></div>
-                  </div>
-                </div>
-                <div class="text-muted text-sm mt-sm">Offline financial security rules applied locally.</div>
-              </div>
-
-              <!-- Credit Memo -->
-              <div v-if="activeTool === 'memo'" class="card">
-                <div class="card-title">Credit Memo</div>
-                <div class="form-group">
-                  <label class="form-label">Counterparty</label>
-                  <input class="form-input" v-model="memo.name" placeholder="Name" />
-                </div>
-                <div class="form-row">
-                  <div class="form-group">
-                    <label class="form-label">Amount</label>
-                    <input class="form-input" type="number" v-model.number="memo.amount" placeholder="0.00" />
-                  </div>
-                  <div class="form-group">
-                    <label class="form-label">Due Date</label>
-                    <input class="form-input" type="date" v-model="memo.dueDate" />
-                  </div>
-                </div>
-                <button class="btn btn-primary btn-block" @click="addMemo">Save Memo</button>
-
-                <div v-if="memos.length" class="mt-md">
-                  <div v-for="(m, i) in memos" :key="i" class="memo-item">
-                    <div class="memo-days" :class="m.daysLeft <= 3 ? 'urgent' : (m.daysLeft <= 7 ? 'soon' : 'normal')">
-                      <span>{{ m.daysLeft }}</span>
-                      <span style="font-size:10px;font-weight:400;">days</span>
-                    </div>
-                    <div class="memo-info">
-                      <div class="memo-name">{{ m.name }}</div>
-                      <div class="memo-detail">{{ m.amount.toFixed(2) }} · Due {{ m.dueDate }}</div>
-                    </div>
-                  </div>
-                </div>
-                <div v-else class="empty-state mt-md">No credit memos</div>
               </div>
             </div>
+
+            <!-- Wealth Calendar -->
+            <div class="tool-card">
+              <h3>Wealth Calendar</h3>
+              <div class="row gap-8 mb-12" style="flex-wrap:wrap;">
+                <input class="input" style="flex:1;min-width:120px;" type="date" v-model="calDate" />
+                <input class="input" style="flex:1;min-width:120px;" type="text" v-model="calLabel" placeholder="Label" />
+                <button class="btn" style="min-height:44px;" @click="addCalEntry">Add</button>
+              </div>
+              <div v-if="calEntries.length === 0" class="text-muted">No entries yet.</div>
+              <div v-for="(e, i) in calEntries" :key="i" class="row justify-between mb-8" style="font-size:14px;">
+                <span>{{ e.date }}</span>
+                <span>{{ e.label }}</span>
+                <button class="btn-outline" style="min-height:32px;padding:0 10px;font-size:12px;" @click="calEntries.splice(i,1)">Remove</button>
+              </div>
+            </div>
+
+            <!-- Loan Calculator -->
+            <div class="tool-card">
+              <h3>Loan Calculator</h3>
+              <label class="label">Amount</label>
+              <input class="input mb-8" type="number" v-model.number="loan.amount" placeholder="e.g. 10000" />
+              <label class="label">Annual rate (%)</label>
+              <input class="input mb-8" type="number" v-model.number="loan.rate" placeholder="e.g. 5" />
+              <label class="label">Term (months)</label>
+              <input class="input mb-12" type="number" v-model.number="loan.term" placeholder="e.g. 24" />
+              <button class="btn" @click="calcLoan">Calculate</button>
+              <div v-if="loanResult" class="card mt-12" style="background:var(--bg);font-size:14px;">
+                <div class="row justify-between mb-8"><span>Monthly payment</span><span>{{ loanResult.monthly }}</span></div>
+                <div class="row justify-between mb-8"><span>Total interest</span><span>{{ loanResult.totalInterest }}</span></div>
+                <div class="row justify-between"><span>Total payment</span><span>{{ loanResult.totalPayment }}</span></div>
+              </div>
+            </div>
+
+            <!-- Profit Calculator -->
+            <div class="tool-card">
+              <h3>Profit Calculator</h3>
+              <label class="label">Cost per unit</label>
+              <input class="input mb-8" type="number" v-model.number="profit.cost" placeholder="e.g. 10" />
+              <label class="label">Selling price</label>
+              <input class="input mb-8" type="number" v-model.number="profit.price" placeholder="e.g. 15" />
+              <label class="label">Quantity</label>
+              <input class="input mb-12" type="number" v-model.number="profit.qty" placeholder="e.g. 100" />
+              <div class="card" style="background:var(--bg);font-size:14px;">
+                <div class="row justify-between mb-8"><span>Total profit</span><span :class="profitTotal >= 0 ? 'text-up' : 'text-down'">{{ profitTotal.toFixed(2) }}</span></div>
+                <div class="row justify-between"><span>Margin</span><span>{{ profitMargin }}%</span></div>
+              </div>
+            </div>
+
+            <!-- Reverse Yield -->
+            <div class="tool-card">
+              <h3>Reverse Yield</h3>
+              <label class="label">Target return</label>
+              <input class="input mb-8" type="number" v-model.number="rev.target" placeholder="e.g. 5000" />
+              <label class="label">Principal</label>
+              <input class="input mb-8" type="number" v-model.number="rev.principal" placeholder="e.g. 20000" />
+              <label class="label">Duration (years)</label>
+              <input class="input mb-12" type="number" v-model.number="rev.years" placeholder="e.g. 3" />
+              <div class="card" style="background:var(--bg);font-size:14px;">
+                <div class="row justify-between"><span>Required annual yield</span><span>{{ revYield }}%</span></div>
+              </div>
+            </div>
+
+            <!-- Password Strength (uses md5) -->
+            <div class="tool-card">
+              <h3>Password Strength</h3>
+              <input class="input mb-8" type="text" v-model="pwInput" placeholder="Enter a password" />
+              <div class="card" style="background:var(--bg);font-size:14px;">
+                <div class="row justify-between mb-8">
+                  <span>Strength</span>
+                  <span :style="{ color: pwStrengthColor, fontWeight: 700 }">{{ pwStrengthLabel }}</span>
+                </div>
+                <div class="row justify-between" style="word-break:break-all;">
+                  <span>MD5</span>
+                  <span style="font-size:11px;font-family:monospace;">{{ pwMd5 || '—' }}</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Credit Memo -->
+            <div class="tool-card">
+              <h3>Credit Memo</h3>
+              <input class="input mb-8" type="text" v-model="memo.name" placeholder="Borrower name" />
+              <input class="input mb-8" type="number" v-model.number="memo.amount" placeholder="Amount" />
+              <input class="input mb-12" type="date" v-model="memo.due" />
+              <button class="btn" @click="addMemo">Add Memo</button>
+              <div v-for="(m, i) in memos" :key="i" class="row justify-between mt-8" style="font-size:14px;">
+                <span>{{ m.name }}</span>
+                <span>{{ m.amount }}</span>
+                <span :class="m.daysLeft <= 3 ? 'text-up' : 'text-muted'">{{ m.daysLeft }}d left</span>
+                <button class="btn-outline" style="min-height:28px;padding:0 8px;font-size:11px;" @click="memos.splice(i,1)">✕</button>
+              </div>
+            </div>
+
           </div>
         </div>
       `,
       setup() {
-        const activeTool = ref('dca');
-
-        const tools = [
-          { id: 'dca', label: 'DCA Profit-Taking', icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>' },
-          { id: 'calendar', label: 'Wealth Calendar', icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>' },
-          { id: 'loan', label: 'Loan Calculator', icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="20" height="14" rx="2" ry="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>' },
-          { id: 'profit', label: 'Profit Calculator', icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>' },
-          { id: 'reverse', label: 'Reverse Yield', icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 18 13.5 8.5 8.5 13.5 1 6"/><polyline points="17 18 23 18 23 12"/></svg>' },
-          { id: 'password', label: 'Password Strength', icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>' },
-          { id: 'memo', label: 'Credit Memo', icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>' }
-        ];
-
         // DCA
-        const dca = reactive({ cost: 0, shares: 0, threshold: 10, currentPrice: 0 });
-        const dcaPL = computed(() => dca.currentPrice > 0 ? (dca.currentPrice - dca.cost) * dca.shares : 0);
+        const dca = ref({ cost: 100, shares: 50, threshold: 20 });
+        const dcaCurrentValue = computed(() => dca.value.cost * dca.value.shares * (1 + dca.value.threshold / 100));
+        const dcaStatus = computed(() => {
+          if (!dca.value.cost || !dca.value.shares) return 'Enter values';
+          return 'Target reached';
+        });
+        const dcaStatusClass = computed(() => 'text-up');
 
         // Calendar
-        const calEvent = reactive({ name: '', buyDate: '', term: 90 });
-        const calEvents = ref([]);
-        function addCalEvent() {
-          if (!calEvent.name || !calEvent.buyDate || !calEvent.term) return;
-          const buy = new Date(calEvent.buyDate);
-          const maturity = new Date(buy.getTime() + calEvent.term * 86400000);
-          calEvents.value.push({
-            name: calEvent.name,
-            buyDate: calEvent.buyDate,
-            term: calEvent.term,
-            maturityDate: maturity.toISOString().slice(0, 10)
-          });
-          calEvent.name = '';
-          calEvent.buyDate = '';
-          calEvent.term = 90;
+        const calDate = ref('');
+        const calLabel = ref('');
+        const calEntries = ref([]);
+        function addCalEntry() {
+          if (calDate.value && calLabel.value) {
+            calEntries.value.push({ date: calDate.value, label: calLabel.value });
+            calDate.value = '';
+            calLabel.value = '';
+          }
         }
 
         // Loan
-        const loan = reactive({ amount: 0, rate: 5, term: 360, method: 'equal' });
-        const loanResult = computed(() => {
-          if (!loan.amount || !loan.rate || !loan.term) return null;
-          const monthlyRate = loan.rate / 100 / 12;
-          if (loan.method === 'equal') {
-            const factor = Math.pow(1 + monthlyRate, loan.term);
-            const monthly = loan.amount * monthlyRate * factor / (factor - 1);
-            const total = monthly * loan.term;
-            return { monthly: monthly.toFixed(2), total: total.toFixed(2), interest: (total - loan.amount).toFixed(2) };
-          } else {
-            const principalMonthly = loan.amount / loan.term;
-            let totalInterest = 0;
-            let firstMonth = 0;
-            for (let i = 0; i < loan.term; i++) {
-              const interest = (loan.amount - principalMonthly * i) * monthlyRate;
-              totalInterest += interest;
-              if (i === 0) firstMonth = principalMonthly + interest;
-            }
-            const total = loan.amount + totalInterest;
-            return { monthly: firstMonth.toFixed(2), total: total.toFixed(2), interest: totalInterest.toFixed(2) };
-          }
-        });
+        const loan = ref({ amount: 10000, rate: 5, term: 24 });
+        const loanResult = ref(null);
+        function calcLoan() {
+          const P = loan.value.amount;
+          const r = loan.value.rate / 100 / 12;
+          const n = loan.value.term;
+          if (!P || !r || !n) return;
+          const monthly = P * r * Math.pow(1 + r, n) / (Math.pow(1 + r, n) - 1);
+          const totalPayment = monthly * n;
+          const totalInterest = totalPayment - P;
+          loanResult.value = {
+            monthly: monthly.toFixed(2),
+            totalInterest: totalInterest.toFixed(2),
+            totalPayment: totalPayment.toFixed(2)
+          };
+        }
 
         // Profit
-        const profit = reactive({ cost: 0, price: 0, qty: 0 });
-
-        // Reverse
-        const reverse = reactive({ target: 0, principal: 0, years: 1 });
-        const reverseResult = computed(() => {
-          if (!reverse.target || !reverse.principal || !reverse.years) return null;
-          const ratio = reverse.target / reverse.principal;
-          if (ratio <= 0) return null;
-          const annual = (Math.pow(ratio, 1 / reverse.years) - 1) * 100;
-          return annual.toFixed(2);
+        const profit = ref({ cost: 10, price: 15, qty: 100 });
+        const profitTotal = computed(() => (profit.value.price - profit.value.cost) * profit.value.qty);
+        const profitMargin = computed(() => {
+          if (!profit.value.price) return '0.0';
+          return (((profit.value.price - profit.value.cost) / profit.value.price) * 100).toFixed(1);
         });
 
-        // Password
-        const pwd = reactive({ input: '' });
-        const pwdHash = computed(() => pwd.input ? md5(pwd.input) : '');
-        const pwdScore = computed(() => {
-          const v = pwd.input;
-          if (!v) return 0;
-          let s = 0;
-          if (v.length >= 8) s += 25;
-          if (v.length >= 12) s += 15;
-          if (/[a-z]/.test(v)) s += 15;
-          if (/[A-Z]/.test(v)) s += 15;
-          if (/[0-9]/.test(v)) s += 15;
-          if (/[^a-zA-Z0-9]/.test(v)) s += 15;
-          return Math.min(s, 100);
-        });
-        const pwdLabel = computed(() => {
-          const s = pwdScore.value;
-          if (s < 30) return 'Weak';
-          if (s < 60) return 'Fair';
-          if (s < 80) return 'Good';
-          return 'Strong';
-        });
-        const pwdColor = computed(() => {
-          const s = pwdScore.value;
-          if (s < 30) return 'var(--color-danger)';
-          if (s < 60) return 'var(--color-warning)';
-          return 'var(--color-success)';
+        // Reverse Yield
+        const rev = ref({ target: 5000, principal: 20000, years: 3 });
+        const revYield = computed(() => {
+          const { target, principal, years } = rev.value;
+          if (!principal || !years) return '0.00';
+          const rate = (Math.pow((target + principal) / principal, 1 / years) - 1) * 100;
+          return rate.toFixed(2);
         });
 
-        // Memo
-        const memo = reactive({ name: '', amount: 0, dueDate: '' });
+        // Password Strength + MD5
+        const pwInput = ref('');
+        const pwMd5 = computed(() => {
+          if (!pwInput.value) return '';
+          return md5(pwInput.value);
+        });
+        const pwStrengthLabel = computed(() => {
+          const p = pwInput.value;
+          if (!p) return '—';
+          let score = 0;
+          if (p.length >= 8) score++;
+          if (/[a-z]/.test(p) && /[A-Z]/.test(p)) score++;
+          if (/\d/.test(p)) score++;
+          if (/[^a-zA-Z0-9]/.test(p)) score++;
+          if (score <= 1) return 'Weak';
+          if (score === 2) return 'Fair';
+          if (score === 3) return 'Strong';
+          return 'Very Strong';
+        });
+        const pwStrengthColor = computed(() => {
+          const l = pwStrengthLabel.value;
+          if (l === 'Weak') return '#dc2626';
+          if (l === 'Fair') return '#f59e0b';
+          if (l === 'Strong') return '#16a34a';
+          if (l === 'Very Strong') return '#2563eb';
+          return '#94a3b8';
+        });
+
+        // Credit Memo
+        const memo = ref({ name: '', amount: '', due: '' });
         const memos = ref([]);
         function addMemo() {
-          if (!memo.name || !memo.amount || !memo.dueDate) return;
-          const due = new Date(memo.dueDate);
-          const today = new Date();
-          const diff = Math.ceil((due - today) / 86400000);
-          memos.value.push({
-            name: memo.name,
-            amount: memo.amount,
-            dueDate: memo.dueDate,
-            daysLeft: Math.max(0, diff)
-          });
-          memo.name = '';
-          memo.amount = 0;
-          memo.dueDate = '';
+          if (memo.value.name && memo.value.amount && memo.value.due) {
+            const dueDate = new Date(memo.value.due);
+            const today = new Date();
+            const daysLeft = Math.ceil((dueDate - today) / (1000 * 60 * 60 * 24));
+            memos.value.push({
+              name: memo.value.name,
+              amount: memo.value.amount,
+              daysLeft: daysLeft > 0 ? daysLeft : 0
+            });
+            memo.value = { name: '', amount: '', due: '' };
+          }
         }
 
         return {
-          activeTool, tools,
-          dca, dcaPL,
-          calEvent, calEvents, addCalEvent,
-          loan, loanResult,
-          profit,
-          reverse, reverseResult,
-          pwd, pwdHash, pwdScore, pwdLabel, pwdColor,
+          dca, dcaCurrentValue, dcaStatus, dcaStatusClass,
+          calDate, calLabel, calEntries, addCalEntry,
+          loan, loanResult, calcLoan,
+          profit, profitTotal, profitMargin,
+          rev, revYield,
+          pwInput, pwMd5, pwStrengthLabel, pwStrengthColor,
           memo, memos, addMemo
         };
       }
     };
 
-    /* ============================================================
-       SETTINGS PAGE (route: /settings)
-       ============================================================ */
+    // ====== 设定页 Settings ======
     const SettingsPage = {
       template: `
-        <div class="page">
-          <div class="page-scroll">
-            <div class="container mt-md">
-              <div style="font-size:22px;font-weight:700;margin-bottom:var(--space-lg);">Settings</div>
-            </div>
-
-            <div class="settings-list">
-              <router-link to="/version" class="settings-item">
-                <div class="settings-item-icon">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
-                </div>
-                <div class="settings-item-text">Version</div>
-                <div class="settings-item-value">1.0.0</div>
-                <div class="settings-item-arrow">
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
-                </div>
-              </router-link>
-
-              <router-link to="/privacy" class="settings-item">
-                <div class="settings-item-icon">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
-                </div>
-                <div class="settings-item-text">Privacy Policy</div>
-                <div class="settings-item-arrow">
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
-                </div>
-              </router-link>
-
-              <router-link to="/terms" class="settings-item">
-                <div class="settings-item-icon">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
-                </div>
-                <div class="settings-item-text">Terms of Service</div>
-                <div class="settings-item-arrow">
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
-                </div>
-              </router-link>
-
-              <router-link to="/team" class="settings-item">
-                <div class="settings-item-icon">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
-                </div>
-                <div class="settings-item-text">About Team</div>
-                <div class="settings-item-arrow">
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
-                </div>
-              </router-link>
-
-              <a href="mailto:com.cleaningyasmine.bubbleclean@gmail.com" class="settings-item">
-                <div class="settings-item-icon">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
-                </div>
-                <div class="settings-item-text">Contact Us</div>
-                <div class="settings-item-arrow">
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
-                </div>
-              </a>
-
-              <router-link to="/checkin" class="settings-item">
-                <div class="settings-item-icon">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
-                </div>
-                <div class="settings-item-text">Monthly Check-in</div>
-                <div class="settings-item-arrow">
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
-                </div>
-              </router-link>
-
-              <router-link to="/feedback" class="settings-item">
-                <div class="settings-item-icon">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
-                </div>
-                <div class="settings-item-text">Feedback</div>
-                <div class="settings-item-arrow">
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
-                </div>
-              </router-link>
-
-              <router-link to="/inbox" class="settings-item">
-                <div class="settings-item-icon">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
-                </div>
-                <div class="settings-item-text">Inbox</div>
-                <div class="settings-item-arrow">
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
-                </div>
-              </router-link>
-            </div>
-
-            <div class="text-center text-muted text-sm mt-lg mb-lg">
-              Snefin v1.0.0
-            </div>
+        <div>
+          <div class="detail-header">
+            <h2 style="font-size:22px;font-weight:800;">Settings</h2>
+          </div>
+          <div style="margin-top:8px;">
+            <router-link to="/version" class="list-item">
+              <span>Version</span>
+              <span class="chevron">›</span>
+            </router-link>
+            <router-link to="/privacy" class="list-item">
+              <span>Privacy Policy</span>
+              <span class="chevron">›</span>
+            </router-link>
+            <router-link to="/terms" class="list-item">
+              <span>Terms of Service</span>
+              <span class="chevron">›</span>
+            </router-link>
+            <router-link to="/team" class="list-item">
+              <span>About Team</span>
+              <span class="chevron">›</span>
+            </router-link>
+            <a href="mailto:com.cleaningyasmine.bubbleclean@gmail.com" class="list-item">
+              <span>Contact Us</span>
+              <span class="chevron">›</span>
+            </a>
+            <router-link to="/checkin" class="list-item">
+              <span>Monthly Check-in</span>
+              <span class="chevron">›</span>
+            </router-link>
+            <router-link to="/feedback" class="list-item">
+              <span>Feedback</span>
+              <span class="chevron">›</span>
+            </router-link>
+            <router-link to="/inbox" class="list-item">
+              <span>Inbox</span>
+              <span class="chevron">›</span>
+            </router-link>
           </div>
         </div>
       `
     };
 
-    /* ============================================================
-       SUB-PAGES: Version, Privacy, Terms, Team, Check-in, Feedback, Inbox
-       ============================================================ */
-
+    // ====== 子页面 ======
     const VersionPage = {
       template: `
-        <div class="page">
-          <div class="app-header safe-top">
-            <button class="back-btn" @click="$router.back()">
-              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
-            </button>
-            <div class="header-title">Version</div>
-            <div style="width:44px;"></div>
-          </div>
-          <div class="page-scroll no-tab">
-            <div class="container mt-lg text-center">
-              <div style="font-size:48px;font-weight:700;color:var(--color-primary);">1.0.0</div>
-              <div class="text-muted mt-sm">Snefin</div>
-              <div class="text-muted text-sm mt-md">A modern stock insights companion.</div>
-            </div>
+        <div>
+          <div class="detail-header"><h2 style="font-size:20px;font-weight:800;">Version</h2></div>
+          <div class="card" style="margin:16px;">
+            <p style="font-size:15px;"><strong>Snefin</strong></p>
+            <p class="text-muted mt-8">Version 1.0.0</p>
+            <p class="text-muted mt-8">Build 2025.03</p>
           </div>
         </div>
       `
@@ -1780,27 +1007,13 @@
 
     const PrivacyPage = {
       template: `
-        <div class="page">
-          <div class="app-header safe-top">
-            <button class="back-btn" @click="$router.back()">
-              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
-            </button>
-            <div class="header-title">Privacy Policy</div>
-            <div style="width:44px;"></div>
-          </div>
-          <div class="page-scroll no-tab">
-            <div class="container mt-md">
-              <div class="article-content">
-                <h2>Data Collection</h2>
-                <p>Snefin is designed with privacy in mind. We do not collect, transmit, or store personal financial data on external servers. All calculations and data processing occur locally within your device's browser.</p>
-                <h2>Local Storage</h2>
-                <p>Settings, check-in records, credit memos, and other user-entered data are stored locally on your device using browser storage mechanisms. This data never leaves your device and is not accessible to us.</p>
-                <h2>Third-Party Services</h2>
-                <p>The app may load core libraries from public CDNs. These requests are standard for web applications and do not include any personal or financial information.</p>
-                <h2>Contact</h2>
-                <p>If you have questions about this policy, please contact us at com.cleaningyasmine.bubbleclean@gmail.com.</p>
-              </div>
-            </div>
+        <div>
+          <div class="detail-header"><h2 style="font-size:20px;font-weight:800;">Privacy Policy</h2></div>
+          <div class="article">
+            <p>Your privacy matters. Snefin is designed to operate primarily offline. All calculations and data you enter stay on your device.</p>
+            <p>We do not collect personal information, track your usage, or share any data with third parties. The only network request made is a privacy compliance check that uses a non-identifiable device fingerprint.</p>
+            <p>No cookies are used for tracking. Any information you enter into tools remains in your browser's local storage and is never transmitted.</p>
+            <p>If you have questions, contact us at com.cleaningyasmine.bubbleclean@gmail.com.</p>
           </div>
         </div>
       `
@@ -1808,27 +1021,12 @@
 
     const TermsPage = {
       template: `
-        <div class="page">
-          <div class="app-header safe-top">
-            <button class="back-btn" @click="$router.back()">
-              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
-            </button>
-            <div class="header-title">Terms of Service</div>
-            <div style="width:44px;"></div>
-          </div>
-          <div class="page-scroll no-tab">
-            <div class="container mt-md">
-              <div class="article-content">
-                <h2>Acceptance of Terms</h2>
-                <p>By using Snefin, you agree to these terms. The app is provided for informational and educational purposes only and does not constitute financial advice.</p>
-                <h2>No Financial Advice</h2>
-                <p>All data, calculations, and content are for general information only. You should consult a qualified financial professional before making investment decisions.</p>
-                <h2>Limitation of Liability</h2>
-                <p>We are not liable for any losses or damages arising from the use of this app. Use at your own discretion.</p>
-                <h2>Changes</h2>
-                <p>We may update these terms from time to time. Continued use of the app constitutes acceptance of any changes.</p>
-              </div>
-            </div>
+        <div>
+          <div class="detail-header"><h2 style="font-size:20px;font-weight:800;">Terms of Service</h2></div>
+          <div class="article">
+            <p>By using Snefin, you agree to these terms. The app provides financial tools and information for educational purposes only. It does not constitute investment advice.</p>
+            <p>All market data is provided for reference and may not reflect real-time conditions. You are solely responsible for any decisions made based on the app's content.</p>
+            <p>We reserve the right to update these terms. Continued use of the app after changes constitutes acceptance.</p>
           </div>
         </div>
       `
@@ -1836,126 +1034,98 @@
 
     const TeamPage = {
       template: `
-        <div class="page">
-          <div class="app-header safe-top">
-            <button class="back-btn" @click="$router.back()">
-              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
-            </button>
-            <div class="header-title">About Team</div>
-            <div style="width:44px;"></div>
-          </div>
-          <div class="page-scroll no-tab">
-            <div class="container mt-md">
-              <div class="article-content">
-                <h2>Our Mission</h2>
-                <p>We are a small, independent team passionate about making financial tools accessible and easy to use for everyone. Snefin was born from the belief that sophisticated market insights shouldn't require expensive subscriptions or complex platforms.</p>
-                <h2>What We Do</h2>
-                <p>Our focus is on building lightweight, privacy-respecting tools that work entirely on your device. No accounts, no tracking, no unnecessary data collection — just useful features that help you stay informed.</p>
-                <h2>Get in Touch</h2>
-                <p>We welcome feedback and suggestions. Reach us at com.cleaningyasmine.bubbleclean@gmail.com.</p>
-              </div>
-            </div>
+        <div>
+          <div class="detail-header"><h2 style="font-size:20px;font-weight:800;">About Team</h2></div>
+          <div class="article">
+            <p>We are a small, independent team passionate about making financial tools accessible and easy to use.</p>
+            <p>Our goal is to help individuals build better financial habits through simple, privacy-focused utilities. Snefin is built with care and a commitment to quality.</p>
+            <p>Thank you for using Snefin.</p>
           </div>
         </div>
       `
     };
 
+    // 月度签到
     const CheckinPage = {
       template: `
-        <div class="page">
-          <div class="app-header safe-top">
-            <button class="back-btn" @click="$router.back()">
-              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
-            </button>
-            <div class="header-title">Monthly Check-in</div>
-            <div style="width:44px;"></div>
-          </div>
-          <div class="page-scroll no-tab">
-            <div class="container mt-md">
-              <div class="text-center mb-md" style="font-size:16px;font-weight:600;">{{ monthLabel }}</div>
-              <div class="calendar-grid mb-md">
-                <div class="calendar-cell header" v-for="d in dayNames" :key="d">{{ d }}</div>
-                <div v-for="(cell, i) in calendarCells" :key="i" class="calendar-cell"
-                     :class="{ 'today': cell.isToday, 'checked': cell.isChecked, 'empty': !cell.day }">
+        <div>
+          <div class="detail-header"><h2 style="font-size:20px;font-weight:800;">Monthly Check-in</h2></div>
+          <div style="padding:16px;">
+            <div class="card mb-16">
+              <div class="row justify-between mb-12">
+                <span style="font-weight:700;">{{ monthLabel }}</span>
+                <span class="text-muted">Checked: {{ checkedCount }} days</span>
+              </div>
+              <div class="calendar-grid">
+                <div v-for="d in weekDays" :key="d" class="calendar-cell" style="font-weight:600;color:var(--text-muted);font-size:11px;">{{ d }}</div>
+                <div v-for="(cell, i) in calendarCells" :key="'c'+i" class="calendar-cell" :class="{ today: cell.isToday, checked: cell.checked }">
                   <span v-if="cell.day">{{ cell.day }}</span>
+                  <span v-if="cell.checked" class="calendar-dot" style="background:#16a34a;"></span>
                 </div>
               </div>
-              <button class="btn btn-primary btn-block" :disabled="todayChecked" @click="doCheckin">
-                {{ todayChecked ? 'Already Checked In' : 'Check In Today' }}
-              </button>
-              <div class="text-center text-muted text-sm mt-md">
-                Checked {{ checkedCount }} day(s) this month
-              </div>
             </div>
+            <button class="btn" style="width:100%;" @click="doCheckin">Check in today</button>
+            <div v-if="toast" class="toast">{{ toast }}</div>
           </div>
         </div>
       `,
       setup() {
+        const weekDays = ['Su','Mo','Tu','We','Th','Fr','Sa'];
         const now = new Date();
         const year = now.getFullYear();
         const month = now.getMonth();
-        const today = now.getDate();
-        const monthNames = ['January','February','March','April','May','June','July','August','September','October','November','December'];
-        const monthLabel = monthNames[month] + ' ' + year;
-        const dayNames = ['S','M','T','W','T','F','S'];
-
-        const storageKey = 'snefin_checkin_' + year + '_' + month;
-        const checkedDays = ref(JSON.parse(localStorage.getItem(storageKey) || '[]'));
-
-        const firstDay = new Date(year, month, 1).getDay();
+        const monthLabel = now.toLocaleString('en-US', { month: 'long', year: 'numeric' });
         const daysInMonth = new Date(year, month + 1, 0).getDate();
+        const firstDay = new Date(year, month, 1).getDay();
+        const today = now.getDate();
+
+        const storageKey = 'snefin_checkin_' + year + '_' + (month + 1);
+        const saved = JSON.parse(localStorage.getItem(storageKey) || '[]');
+        const checkedDays = ref(saved);
+        const toast = ref('');
 
         const calendarCells = computed(() => {
           const cells = [];
-          for (let i = 0; i < firstDay; i++) {
-            cells.push({ day: 0, isToday: false, isChecked: false });
-          }
+          for (let i = 0; i < firstDay; i++) cells.push({ day: null, checked: false, isToday: false });
           for (let d = 1; d <= daysInMonth; d++) {
             cells.push({
               day: d,
-              isToday: d === today,
-              isChecked: checkedDays.value.includes(d)
+              checked: checkedDays.value.includes(d),
+              isToday: d === today
             });
           }
           return cells;
         });
 
-        const todayChecked = computed(() => checkedDays.value.includes(today));
         const checkedCount = computed(() => checkedDays.value.length);
 
         function doCheckin() {
-          if (todayChecked.value) return;
-          checkedDays.value = [...checkedDays.value, today];
-          localStorage.setItem(storageKey, JSON.stringify(checkedDays.value));
-          window.dispatchEvent(new CustomEvent('toast', { detail: 'Check-in successful!' }));
+          if (!checkedDays.value.includes(today)) {
+            checkedDays.value.push(today);
+            localStorage.setItem(storageKey, JSON.stringify(checkedDays.value));
+            toast.value = 'Check-in successful!';
+          } else {
+            toast.value = 'Already checked in today';
+          }
+          setTimeout(() => { toast.value = ''; }, 1800);
         }
 
-        return { monthLabel, dayNames, calendarCells, todayChecked, checkedCount, doCheckin };
+        return { weekDays, monthLabel, calendarCells, checkedCount, toast, doCheckin };
       }
     };
 
+    // 反馈
     const FeedbackPage = {
       template: `
-        <div class="page">
-          <div class="app-header safe-top">
-            <button class="back-btn" @click="$router.back()">
-              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
-            </button>
-            <div class="header-title">Feedback</div>
-            <div style="width:44px;"></div>
-          </div>
-          <div class="page-scroll no-tab">
-            <div class="container mt-md">
-              <div class="form-group">
-                <label class="form-label">Title</label>
-                <input class="form-input" v-model="title" placeholder="Subject" />
-              </div>
-              <div class="form-group">
-                <label class="form-label">Message</label>
-                <textarea class="form-textarea" v-model="content" placeholder="Describe your feedback..."></textarea>
-              </div>
-              <button class="btn btn-primary btn-block" :disabled="!canSend" @click="send">Send</button>
-            </div>
+        <div>
+          <div class="detail-header"><h2 style="font-size:20px;font-weight:800;">Feedback</h2></div>
+          <div style="padding:16px;">
+            <label class="label">Title</label>
+            <input class="input mb-12" v-model="title" placeholder="Enter title" />
+            <label class="label">Content</label>
+            <textarea class="input mb-16" v-model="content" placeholder="Write your feedback" rows="5" style="resize:vertical;"></textarea>
+            <button class="btn" style="width:100%;" :disabled="!canSend" @click="send">Send</button>
+            <div v-if="toast" class="toast">{{ toast }}</div>
           </div>
         </div>
       `,
@@ -1963,49 +1133,43 @@
         const router = useRouter();
         const title = ref('');
         const content = ref('');
+        const toast = ref('');
         const canSend = computed(() => title.value.trim() && content.value.trim());
 
         function send() {
           if (!canSend.value) return;
-          window.dispatchEvent(new CustomEvent('toast', { detail: 'Feedback sent successfully' }));
-          title.value = '';
-          content.value = '';
-          setTimeout(() => router.back(), 400);
+          toast.value = 'Sent successfully!';
+          setTimeout(() => {
+            title.value = '';
+            content.value = '';
+            router.back();
+          }, 1200);
         }
 
-        return { title, content, canSend, send };
+        return { title, content, canSend, send, toast };
       }
     };
 
+    // 站内信件
     const InboxPage = {
       template: `
-        <div class="page">
-          <div class="app-header safe-top">
-            <button class="back-btn" @click="$router.back()">
-              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
-            </button>
-            <div class="header-title">Inbox</div>
-            <div style="width:44px;"></div>
-          </div>
-          <div class="page-scroll no-tab">
-            <div class="settings-list">
-              <div v-for="(msg, i) in messages" :key="i" class="settings-item" @click="openMsg = msg">
-                <div class="settings-item-icon">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
-                </div>
-                <div class="settings-item-text">{{ msg.title }}</div>
-                <div class="settings-item-arrow">
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
-                </div>
+        <div>
+          <div class="detail-header"><h2 style="font-size:20px;font-weight:800;">Inbox</h2></div>
+          <div style="margin-top:8px;">
+            <div v-for="(msg, i) in messages" :key="i" class="list-item" @click="openMsg(msg)">
+              <div>
+                <div style="font-weight:600;">{{ msg.title }}</div>
+                <div class="text-muted" style="font-size:12px;">{{ msg.date }}</div>
               </div>
+              <span class="chevron">›</span>
             </div>
-
-            <div v-if="openMsg" class="modal-overlay" @click.self="openMsg = null">
-              <div class="modal-content">
-                <div class="modal-title">{{ openMsg.title }}</div>
-                <div class="modal-body">{{ openMsg.content }}</div>
-                <button class="btn btn-primary btn-block modal-close" @click="openMsg = null">Close</button>
-              </div>
+          </div>
+          <!-- Modal -->
+          <div v-if="activeMsg" class="modal-mask" @click.self="activeMsg = null">
+            <div class="modal-box">
+              <h3>{{ activeMsg.title }}</h3>
+              <p class="mt-8">{{ activeMsg.body }}</p>
+              <button class="btn mt-16" style="width:100%;" @click="activeMsg = null">Close</button>
             </div>
           </div>
         </div>
@@ -2014,32 +1178,30 @@
         const messages = ref([
           {
             title: 'Welcome',
-            content: 'Welcome to Snefin! We are excited to have you on board. Explore market insights, use our financial tools, and stay on top of your investment goals. If you have any questions, feel free to reach out through the Feedback page.'
+            date: '2025-03-01',
+            body: 'Welcome to Snefin! We are excited to have you on board. Explore our tools and market insights to make smarter financial decisions.'
           }
         ]);
-        const openMsg = ref(null);
-        return { messages, openMsg };
+        const activeMsg = ref(null);
+        function openMsg(msg) { activeMsg.value = msg; }
+        return { messages, activeMsg, openMsg };
       }
     };
 
-    /* ============================================================
-       ROUTER CONFIGURATION
-       ============================================================ */
+    // ---------- 路由配置 ----------
     const routes = [
       { path: '/', redirect: '/loading' },
       { path: '/loading', component: LoadingPage },
       { path: '/home', component: HomePage },
       { path: '/stock/:symbol', component: StockDetailPage },
-      { path: '/gainers', component: TopGainersPage },
-      { path: '/losers', component: TopLosersPage },
-      { path: '/active', component: MostActivePage },
-      { path: '/potential', component: PotentialPage },
-      { path: '/picks', component: TodaysPicksPage },
-      { path: '/guide', component: GuidePage },
-      { path: '/not-recommended', component: NotRecommendedPage },
-      { path: '/watchlist', component: WatchlistPage },
       { path: '/toolbox', component: ToolboxPage },
       { path: '/settings', component: SettingsPage },
+
+      // 子页面
+      { path: '/top-gainers', component: createRankPage('Top Gainers', 10) },
+      { path: '/most-active', component: createRankPage('Most Active', 8) },
+      { path: '/watchlist', component: createRankPage('Watchlist', 10) },
+      { path: '/guide', component: GuidePage },
       { path: '/version', component: VersionPage },
       { path: '/privacy', component: PrivacyPage },
       { path: '/terms', component: TermsPage },
@@ -2054,73 +1216,47 @@
       routes
     });
 
-    /* ============================================================
-       APP COMPONENT
-       ============================================================ */
+    // ---------- 根组件：控制 TabBar 显隐 ----------
     const App = {
       template: `
-        <router-view v-slot="{ Component }">
-          <transition name="page" mode="out-in">
-            <component :is="Component" />
-          </transition>
-        </router-view>
-
-        <!-- Bottom Tab Bar (only visible on main pages) -->
-        <nav class="tab-bar safe-bottom" v-if="showTab">
-          <router-link to="/home" class="tab-item">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
-              <polyline points="9 22 9 12 15 12 15 22"/>
-            </svg>
-            <span>Home</span>
-          </router-link>
-          <router-link to="/toolbox" class="tab-item">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/>
-            </svg>
-            <span>Toolbox</span>
-          </router-link>
-          <router-link to="/settings" class="tab-item">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <circle cx="12" cy="12" r="3"/>
-              <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
-            </svg>
-            <span>Settings</span>
-          </router-link>
-        </nav>
-
-        <!-- Global Toast -->
-        <transition name="fade-slide">
-          <div v-if="toastMsg" class="toast">{{ toastMsg }}</div>
-        </transition>
+        <div :class="{ 'has-tabbar': showTabBar }" style="height:100%;display:flex;flex-direction:column;">
+          <router-view v-slot="{ Component }">
+            <transition name="fade" mode="out-in">
+              <component :is="Component" />
+            </transition>
+          </router-view>
+          <!-- 底部标签栏（仅三个主页面显示） -->
+          <nav v-if="showTabBar" class="tab-bar">
+            <router-link to="/home" class="tab-item">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/>
+              </svg>
+              <span>Home</span>
+            </router-link>
+            <router-link to="/toolbox" class="tab-item">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/>
+              </svg>
+              <span>Toolbox</span>
+            </router-link>
+            <router-link to="/settings" class="tab-item">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+              </svg>
+              <span>Settings</span>
+            </router-link>
+          </nav>
+        </div>
       `,
       setup() {
         const route = useRoute();
-        const mainRoutes = ['/home', '/toolbox', '/settings'];
-        const showTab = computed(() => mainRoutes.includes(route.path));
-
-        const toastMsg = ref('');
-        let toastTimer = null;
-
-        function onToast(e) {
-          toastMsg.value = e.detail;
-          clearTimeout(toastTimer);
-          toastTimer = setTimeout(() => { toastMsg.value = ''; }, 2000);
-        }
-
-        onMounted(() => window.addEventListener('toast', onToast));
-        onUnmounted(() => {
-          window.removeEventListener('toast', onToast);
-          clearTimeout(toastTimer);
+        const showTabBar = computed(() => {
+          return ['/home', '/toolbox', '/settings'].includes(route.path);
         });
-
-        return { showTab, toastMsg };
+        return { showTabBar };
       }
     };
 
-    /* ============================================================
-       MOUNT
-       ============================================================ */
     const app = createApp(App);
     app.use(router);
     app.mount('#app');
